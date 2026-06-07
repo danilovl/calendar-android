@@ -6,16 +6,16 @@ Modern Android application for calendar and event management, built with Jetpack
 
 - **Multiple View Modes**: Month, Week, and Day views for flexible scheduling.
 - **Event Management**:
-    - Create, edit, and delete events.
-    - Support for different event types (Regular Events, Reminders).
+  - Create, edit, and delete events.
+  - Support for different event types (Regular Events, Reminders).
 - **Flexible Reminder System**:
-    - Reminders are optional and can be toggled off.
-    - Custom reminder time selection via a Wheel Picker (from 1 minute to 60 minutes, or hours/days/weeks).
-    - Dynamic notification lead time calculation.
+  - Reminders are optional and can be toggled off.
+  - Custom reminder time selection via a Wheel Picker (from 1 minute to 60 minutes, or hours/days/weeks).
+  - Dynamic notification lead time calculation.
 - **Holidays Integration**:
-    - Support for displaying public holidays.
-    - **Multi-country support**: Track holidays from multiple countries simultaneously.
-    - Holiday names displayed directly within the calendar grid.
+  - Support for displaying public holidays.
+  - **Multi-country support**: Track holidays from multiple countries simultaneously.
+  - Holiday names displayed directly within the calendar grid.
 - **Localization**: Multi-language interface support.
 - **Modern UI**: Fully implemented in Jetpack Compose following Material 3 guidelines with responsive layout.
 
@@ -25,19 +25,19 @@ Modern Android application for calendar and event management, built with Jetpack
 |:---:|:---:|:---:|
 | <img src="./readme/month_view.jpg" width="250"> | <img src="./readme/month_view_expanded.jpg" width="250"> | <img src="./readme/month_view_events.jpg" width="250"> |
 
-| Week View | Day View |
-|:---:|:---:|
-| <img src="./readme/week_view.jpg" width="250"> | <img src="./readme/day_view.jpg" width="250"> |
+| Week View | Day View | Year View |
+|:---:|:---:|:---:|
+| <img src="./readme/week_view.jpg" width="250"> | <img src="./readme/day_view.jpg" width="250"> | <img src="./readme/year_view.jpg" width="250"> |
 
-| Year View | Search Events |
+| Add Event | Search Events |
 |:---:|:---:|
-| <img src="./readme/year_view.jpg" width="250"> | <img src="./readme/search_events.jpg" width="250"> |
+| <img src="./readme/add_event.jpg" width="250"> | <img src="./readme/search_events.jpg" width="250"> |
 
 ### Scrolling Screenshots
 
-| Settings | Edit Event |
-|:---:|:---:|
-| <img src="./readme/settings.jpg" width="250"> | <img src="./readme/edit_event.jpg" width="250"> |
+| Settings |
+|:---:|
+| <img src="./readme/settings.jpg" width="250"> |
 
 ## Technical Stack
 
@@ -59,8 +59,8 @@ Modern Android application for calendar and event management, built with Jetpack
 - **JDK 17 or 21**: Required for modern Gradle and Android build tools.
 - **Android Studio**: Ladybug (2024.2.1) or later recommended.
 - **Android SDK**:
-    - Min SDK: 26 (Android 8.0)
-    - Target SDK: 36 (Android 15+)
+  - Min SDK: 26 (Android 8.0)
+  - Target SDK: 36 (Android 15+)
 
 ## Build and Run
 

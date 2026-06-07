@@ -1,0 +1,25 @@
+package danilovl.calendar.data.repository
+
+internal object SettingsKeys {
+    const val KEY_WEEK_START = "week_start"
+    const val KEY_EXPANDED_MONTH = "expanded_month"
+    const val KEY_SHOW_WEEK_NUMBER = "show_week_number"
+    const val KEY_CHINESE_ALMANAC = "chinese_almanac"
+    const val KEY_INTL_HOLIDAYS = "intl_holidays"
+    const val KEY_HOLIDAY_COUNTRY = "holiday_country"
+    const val KEY_ADDITIONAL_HOLIDAY_COUNTRIES = "additional_holiday_countries"
+    const val KEY_OTHER_CALENDAR = "other_calendar"
+    const val KEY_DEFAULT_REMINDER = "default_reminder"
+    const val KEY_ALL_DAY_REMINDER = "all_day_reminder"
+    const val KEY_REMINDER_MELODY = "reminder_melody"
+    const val KEY_IMPORT_BIRTHDAYS = "import_birthdays"
+    const val KEY_EVENT_TIMEZONE = "event_timezone"
+    const val KEY_WIDGET_RANGE = "widget_range_days"
+    const val KEY_LANGUAGE = "language"
+    const val KEY_COLOR_EVENT = "color_event"
+    const val KEY_COLOR_BIRTHDAY = "color_birthday"
+    const val KEY_COLOR_ANNIVERSARY = "color_anniversary"
+    const val KEY_COLOR_REMINDER = "color_reminder"
+    const val KEY_ENABLED_CALENDARS = "enabled_calendars"
+    const val KEY_LAST_BIRTHDAYS_SYNC = "last_birthdays_sync"
+}

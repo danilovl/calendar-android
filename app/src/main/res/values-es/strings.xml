@@ -1,0 +1,198 @@
+<resources>
+    <string name="app_name">Calendario</string>
+
+    <!-- Common -->
+    <string name="common_ok">Aceptar</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_back">Atrás</string>
+    <string name="common_not_found">No se encontró nada</string>
+    <string name="unit_days_short">d</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_accounts_manage">Gestionar calendarios de cuentas</string>
+    <string name="settings_cat_month_views">Vistas de mes</string>
+    <string name="settings_week_start">Inicio de semana</string>
+    <string name="settings_expanded_month">Mes ampliado</string>
+    <string name="settings_show_week_number">Mostrar número de semana</string>
+    <string name="settings_cat_features">Funciones</string>
+    <string name="settings_chinese_almanac">Tabú del almanaque chino</string>
+    <string name="settings_intl_holidays">Festivos internacionales</string>
+    <string name="settings_holiday_country">País de festivos</string>
+    <string name="settings_other_calendars">Otros calendarios</string>
+    <string name="settings_cat_reminders">Recordatorios</string>
+    <string name="settings_reminder_item">Recordatorios</string>
+    <string name="settings_reminder_melody_title">Melodía del recordatorio</string>
+    <string name="settings_reminder_time">Hora del recordatorio</string>
+    <string name="settings_reminder_time_allday">Hora del recordatorio (todo el día)</string>
+    <string name="settings_cat_other">Otros</string>
+    <string name="settings_import_birthdays">Importar cumpleaños de contactos</string>
+    <string name="settings_widget_range">Rango de eventos del widget</string>
+    <string name="settings_event_tz">Ajustes de zona horaria del evento</string>
+    <string name="settings_event_tz_title">Zona horaria del evento</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_language">Idioma de la aplicación</string>
+    <string name="language_system">Sistema</string>
+    <string name="about_text">Calendario\nVersión 1.0.0\n\n© 2026 danilovl</string>
+    <string name="accounts_title">Gestionar calendarios</string>
+    <string name="accounts_body">Calendario local (predeterminado)</string>
+    <string name="country_search">Buscar país</string>
+    <string name="common_today">Hoy</string>
+    <string name="common_no_events">Sin eventos</string>
+    <string name="common_all_day">Todo el día</string>
+    <string name="event_birthday">Cumpleaños</string>
+    <string name="event_holiday">Festivo</string>
+    <string name="search_title">Buscar eventos</string>
+    <string name="reminder_set">Recordatorio establecido</string>
+    <string name="detail_repeat">Repetir</string>
+    <string name="detail_repeat_end">Fin de la repetición</string>
+    <string name="detail_repeat_never">Nunca</string>
+    <string name="detail_account">Cuenta</string>
+    <string name="detail_local_calendar">Calendario local</string>
+    <string name="reminder_off">No recordar</string>
+    <string name="action_edit">Editar</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_close">Cerrar</string>
+    <string name="holiday_subtitle">Día festivo oficial</string>
+    <string name="birthday_subtitle">Contacto de la agenda</string>
+    <string name="action_add">Agregar</string>
+    <string name="select_color">Elegir color</string>
+    <string name="color_default">Predeterminado</string>
+    <string name="settings_colors_title">Colores de eventos</string>
+    <string name="action_menu">Menú</string>
+    <string name="action_search">Buscar</string>
+    <string name="action_go_to_date">Ir a la fecha</string>
+    <string name="action_calc_date">Cálculo de fecha</string>
+    <string name="action_share">Compartir</string>
+    <string name="action_settings">Ajustes</string>
+    <string name="action_set_reminder">Establecer recordatorio</string>
+    <string name="enter_name">Introduce el nombre</string>
+    <string name="enter_title">Introduce el título</string>
+    <string name="label_description">Descripción</string>
+    <string name="label_end">Fin</string>
+    <string name="label_start">Inicio</string>
+    <string name="label_timezone">Zona horaria</string>
+    <string name="label_when">Cuándo</string>
+    <string name="melody_default">Predeterminada</string>
+    <string name="melody_energetic">Enérgica</string>
+    <string name="melody_melodic">Melódica</string>
+    <string name="melody_quiet">Tranquila</string>
+    <string name="option_chinese">Chino</string>
+    <string name="option_hebrew">Hebreo</string>
+    <string name="option_islamic">Islámico</string>
+    <string name="option_monday">Lunes</string>
+    <string name="option_none">Ninguno</string>
+    <string name="option_sunday">Domingo</string>
+    <string name="remind_1_day">1 día antes</string>
+    <string name="remind_1_hour">1 hora antes</string>
+    <string name="remind_1_week">1 semana antes</string>
+    <string name="remind_10_min">10 minutos antes</string>
+    <string name="remind_15_min">15 minutos antes</string>
+    <string name="remind_2_days">2 días antes</string>
+    <string name="remind_30_min">30 minutos antes</string>
+    <string name="remind_day_before_20">Víspera (a las 20:00)</string>
+    <string name="repeat_daily">Diariamente</string>
+    <string name="repeat_monthly">Mensualmente</string>
+    <string name="repeat_none">Sin repetición</string>
+    <string name="repeat_weekly">Semanalmente</string>
+    <string name="repeat_yearly">Anualmente</string>
+    <string name="select_melody">Elegir melodía</string>
+    <string name="type_anniversary">Aniversario</string>
+    <string name="type_birthday">Cumpleaños</string>
+    <string name="type_event">Evento</string>
+    <string name="type_reminder">Recordatorio</string>
+    <string name="label_location">Ubicación</string>
+    <string name="action_open_in_maps">Abrir en Maps</string>
+    <string name="color_hue_label">Matiz</string>
+    <string name="select_location">Seleccionar ubicación</string>
+    <string name="map_search_placeholder">Buscar lugar</string>
+    <string name="color_custom">Color personalizado</string>
+    <string name="action_save">Guardar</string>
+    <string name="select_date_time">Seleccionar fecha y hora</string>
+    <string name="select_date">Seleccionar fecha</string>
+    <string name="select_time">Seleccionar hora</string>
+
+    <string name="external_calendars_title">Calendarios del sistema</string>
+    <string name="no_external_calendars">No hay calendarios disponibles</string>
+    <string name="permission_calendar_denied">Permiso de calendario denegado</string>
+    <string name="action_import_ics">Importar desde .ics</string>
+    <string name="action_today">Hoy</string>
+    <string name="action_done">Hecho</string>
+    <string name="action_confirm">Confirmar</string>
+
+    <!-- Date Calculation -->
+    <string name="datecalc_title">Cálculo de fecha</string>
+    <string name="datecalc_date_format">EEEE, d \'de\' MMMM \'de\' yyyy</string>
+    <string name="datecalc_section_diff">Diferencia entre fechas</string>
+    <string name="datecalc_label_diff">Diferencia</string>
+    <string name="datecalc_section_add_sub">Fecha ± días</string>
+    <string name="datecalc_label_date">Fecha</string>
+    <string name="datecalc_add">Añadir</string>
+    <string name="datecalc_subtract">Restar</string>
+    <string name="datecalc_decrease">Menos</string>
+    <string name="datecalc_days_count">Número de días</string>
+    <string name="datecalc_increase">Más</string>
+    <string name="datecalc_result">Resultado</string>
+
+    <string name="unit_min_short">min</string>
+    <string name="unit_hours_short">h</string>
+    <string name="unit_weeks_short">sem</string>
+    <string name="remind_before_prefix">antes</string>
+    <string name="settings_additional_countries">Países adicionales</string>
+    <string name="settings_add_holiday_country">Agregar país</string>
+    <string name="settings_sync_birthdays_now">Sincronizar ahora</string>
+    <string name="settings_last_sync">Última sincronización: %s</string>
+    <string name="settings_last_sync_never">Nunca</string>
+    <string name="birthday_widget_format">Cumpleaños de %1$s</string>
+    <string name="repeat_every">Cada</string>
+    <string name="repeat_custom">Personalizado…</string>
+    <string name="repeat_days_one">día</string>
+    <string name="repeat_days_few">días</string>
+    <string name="repeat_days_many">días</string>
+    <string name="repeat_weeks_one">semana</string>
+    <string name="repeat_weeks_few">semanas</string>
+    <string name="repeat_weeks_many">semanas</string>
+    <string name="repeat_months_one">mes</string>
+    <string name="repeat_months_few">meses</string>
+    <string name="repeat_months_many">meses</string>
+    <string name="repeat_years_one">año</string>
+    <string name="repeat_years_few">años</string>
+    <string name="repeat_years_many">años</string>
+    <string name="delete_this_occurrence">Solo este evento</string>
+    <string name="delete_all_occurrences">Todos los eventos</string>
+    <string name="delete_series_title">Eliminar evento recurrente</string>
+    <string name="label_more">más</string>
+    <string name="map_instruction">Toca el mapa para seleccionar una ubicación</string>
+    <string name="location_point_selected">Punto en el mapa</string>
+    <string name="settings_import_export">Importar y exportar</string>
+    <string name="settings_export_json">Exportar eventos (JSON)</string>
+    <string name="settings_export_ics">Exportar eventos (.ics)</string>
+    <string name="settings_import_json">Importar eventos (JSON)</string>
+    <string name="settings_export_success">Eventos exportados correctamente</string>
+    <string name="settings_import_success">Eventos importados correctamente</string>
+    <string name="settings_import_error">Error al importar eventos</string>
+    <string name="no_events_to_export">No hay eventos para exportar</string>
+    <string name="settings_export_type_selection">Seleccionar tipos de eventos para exportar</string>
+    <string name="settings_export_action">Exportar</string>
+    <string name="settings_notifications_enabled">Notificaciones</string>
+    <string name="settings_notifications_disabled_desc">Desactivadas en la configuración del sistema</string>
+    <string name="reminder_on">Recordatorio activado</string>
+    <string name="action_cancel_reminder">Cancelar recordatorio</string>
+    <string name="birthday_age">Cumplirá %d años</string>
+    <string name="action_open_in_app_map">Abrir en la aplicación</string>
+    <string name="map_view_title">Ubicación</string>
+    <string name="view_year">Año</string>
+    <string name="view_month">Mes</string>
+    <string name="view_week">Semana</string>
+    <string name="view_day">Día</string>
+</resources>
+
+
+
+
+
+
+
+
+
+

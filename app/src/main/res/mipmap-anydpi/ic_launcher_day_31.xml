@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_day_bg"/>
+    <foreground>
+        <vector android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+            <path android:strokeColor="#37474F" android:strokeWidth="6" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M34,48 h12 L40,59 M40,59 a7,7 0 1 1 -2,10 M66,48 v24 M60,54 l6,-6"/>
+        </vector>
+    </foreground>
+</adaptive-icon>

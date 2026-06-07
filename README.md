@@ -33,8 +33,6 @@ Modern Android application for calendar and event management, built with Jetpack
 |:---:|:---:|
 | <img src="./readme/add_event.jpg" width="250"> | <img src="./readme/search_events.jpg" width="250"> |
 
-### Scrolling Screenshots
-
 | Settings |
 |:---:|
 | <img src="./readme/settings.jpg" width="250"> |

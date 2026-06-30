@@ -196,18 +196,19 @@ fun EventDetailSheet(
     }
 
     val timeFmt = DateTimeUtils.timeFormatter
-    val subtitle = remember(event) {
-        val date = event.date
+    val subtitle = remember(event, selectedDate) {
+        val displayDate = selectedDate ?: event.date
+        val date = displayDate
             .format(DateTimeFormatter.ofPattern("EEEE, d MMMM", locale))
         val time = when {
             event.isAllDay -> null
             event.startTime != null -> event.startTime.format(timeFmt) +
-                (event.endTime?.let { ", ${it.format(timeFmt)}" } ?: "")
+                    (event.endTime?.let { ", ${it.format(timeFmt)}" } ?: "")
             else -> null
         }
         if (time != null) "$date, $time" else date
     }
-    val relative = remember(event, locale) { relativeDay(event.date, locale) }
+    val relative = remember(event, selectedDate, locale) { relativeDay(selectedDate ?: event.date, locale) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -221,7 +222,7 @@ fun EventDetailSheet(
                         .verticalScroll(rememberScrollState())
                 ) {
                     if (isCelebration) {
-                        CelebrationHeader(event, headerColor, locale)
+                        CelebrationHeader(event, headerColor, locale, selectedDate)
                         Column(
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -269,6 +270,12 @@ fun EventDetailSheet(
 
                             if (event.repeat != "none") {
                                 DetailRow(trans(R.string.detail_repeat), repeatLabel(event.repeat))
+                                if (selectedDate != null && selectedDate != event.date) {
+                                    DetailRow(
+                                        trans(R.string.label_start),
+                                        event.date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", locale))
+                                    )
+                                }
                                 DetailRow(
                                     trans(R.string.detail_repeat_end),
                                     event.repeatUntil?.let { DateTimeUtils.formatDateLong(it) } ?: trans(R.string.detail_repeat_never)
@@ -325,7 +332,7 @@ fun EventDetailSheet(
 }
 
 @Composable
-private fun CelebrationHeader(event: CalendarEvent, color: Color, locale: Locale) {
+private fun CelebrationHeader(event: CalendarEvent, color: Color, locale: Locale, selectedDate: LocalDate? = null) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -335,8 +342,9 @@ private fun CelebrationHeader(event: CalendarEvent, color: Color, locale: Locale
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            val displayDate = selectedDate ?: event.date
             Text(
-                event.date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy EEE", locale)),
+                displayDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy EEE", locale)),
                 color = Color.White.copy(alpha = 0.9f),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
@@ -445,7 +453,7 @@ private fun relativeDay(date: LocalDate, locale: Locale): String {
         1L -> rdtf.format(Direction.NEXT, AbsoluteUnit.DAY)
         -1L -> rdtf.format(Direction.LAST, AbsoluteUnit.DAY)
         else -> if (days > 0) rdtf.format(days.toDouble(), Direction.NEXT, RelativeUnit.DAYS)
-                else rdtf.format((-days).toDouble(), Direction.LAST, RelativeUnit.DAYS)
+        else rdtf.format((-days).toDouble(), Direction.LAST, RelativeUnit.DAYS)
     }
     return text.replaceFirstChar { it.titlecase(locale) }
 }

@@ -264,23 +264,30 @@ class CalendarViewModel(
     private val _showAddEvent = MutableStateFlow(false)
     val showAddEvent: StateFlow<Boolean> = _showAddEvent.asStateFlow()
 
-    fun showEventDetails(eventId: Int) {
+    fun showEventDetails(eventId: Int, origDateStr: String? = null) {
         viewModelScope.launch {
-            _selectedEvent.value = eventDao.getEventById(eventId)
-            _selectedEvent.value?.let { event ->
-                selectDate(event.date)
+            val event = eventDao.getEventById(eventId)
+            if (event != null) {
+                val updatedEvent = if (event.eventType == EventType.BIRTHDAY.value && 
+                    origDateStr != null && 
+                    !event.description.contains("BIRTHDAY_ORIG_DATE:")) {
+                    event.copy(description = "BIRTHDAY_ORIG_DATE:$origDateStr|" + event.description)
+                } else event
+                
+                _selectedEvent.value = updatedEvent
+                selectDate(updatedEvent.date)
             }
         }
     }
 
-    fun showVirtualEventDetails(type: String, title: String, date: LocalDate) {
+    fun showVirtualEventDetails(type: String, title: String, date: LocalDate, origDateStr: String? = null) {
         val virtualEvent = CalendarEvent(
             id = if (type == EventType.HOLIDAY.value) -1 else -2,
             title = title,
             date = date,
             eventType = type,
             isAllDay = true,
-            description = if (type == EventType.HOLIDAY.value) application.getString(R.string.holiday_subtitle) else application.getString(R.string.birthday_subtitle)
+            description = if (type == EventType.HOLIDAY.value) application.getString(R.string.holiday_subtitle) else "BIRTHDAY_ORIG_DATE:${origDateStr ?: date}|" + application.getString(R.string.birthday_subtitle)
         )
         _selectedEvent.value = virtualEvent
         selectDate(date)
@@ -393,9 +400,13 @@ class CalendarViewModel(
         repeatUntil: LocalDate? = null
     ) {
         viewModelScope.launch {
+            val finalDescription = if (eventType == EventType.BIRTHDAY.value && !description.contains("BIRTHDAY_ORIG_DATE:")) {
+                "BIRTHDAY_ORIG_DATE:$date|$description"
+            } else description
+
             val id = addEventUseCase(
                 title = title,
-                description = description,
+                description = finalDescription,
                 date = date,
                 endDate = endDate,
                 startTime = startTime,

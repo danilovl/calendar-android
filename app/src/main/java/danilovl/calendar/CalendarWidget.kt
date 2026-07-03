@@ -65,7 +65,8 @@ class CalendarWidget : GlanceAppWidget() {
         val title: String,
         val startTime: LocalTime?,
         val endTime: LocalTime?,
-        val type: String
+        val type: String,
+        val origDate: String? = null
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) = coroutineScope {
@@ -138,15 +139,27 @@ class CalendarWidget : GlanceAppWidget() {
                 val dayEvents = mutableListOf<WidgetEvent>()
                 
                 dbEvents.filter { isEventOnDate(it, date) }.forEach {
-                    dayEvents.add(WidgetEvent(it.id, it.title, it.startTime, it.endTime, it.eventType))
+                    val origDate = if (it.eventType == EventType.BIRTHDAY.value && it.description.contains("BIRTHDAY_ORIG_DATE:")) {
+                        it.description.substringAfter("BIRTHDAY_ORIG_DATE:").substringBefore("|")
+                    } else null
+                    dayEvents.add(WidgetEvent(it.id, it.title, it.startTime, it.endTime, it.eventType, origDate))
                 }
                 
                 holidays.filter { it.date == date }.forEach {
                     dayEvents.add(WidgetEvent(null, it.name, null, null, EventType.HOLIDAY.value))
                 }
                 
-                birthdays.filter { it.date.month == date.month && it.date.dayOfMonth == date.dayOfMonth }.forEach {
-                    dayEvents.add(WidgetEvent(null, localizedContext.getString(R.string.birthday_widget_format, it.name), null, null, EventType.BIRTHDAY.value))
+                birthdays.filter { it.date.month == date.month && it.date.dayOfMonth == date.dayOfMonth }.forEach { birthday ->
+                    val existing = dayEvents.find { it.title == birthday.name && it.type == EventType.BIRTHDAY.value }
+                    if (existing != null) {
+                        // If already exists (likely from DB), update its origDate if it's missing
+                        if (existing.origDate == null) {
+                            val idx = dayEvents.indexOf(existing)
+                            dayEvents[idx] = existing.copy(origDate = birthday.date.toString())
+                        }
+                    } else {
+                        dayEvents.add(WidgetEvent(null, birthday.name, null, null, EventType.BIRTHDAY.value, birthday.date.toString()))
+                    }
                 }
                 
                 if (dayEvents.isNotEmpty()) {
@@ -265,6 +278,9 @@ class CalendarWidget : GlanceAppWidget() {
                 putExtra("EVENT_TYPE", event.type)
                 putExtra("EVENT_TITLE", event.title)
                 putExtra("EVENT_DATE", date.toString())
+                if (event.origDate != null) {
+                    putExtra("EVENT_ORIG_DATE", event.origDate)
+                }
             }
             flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
         }

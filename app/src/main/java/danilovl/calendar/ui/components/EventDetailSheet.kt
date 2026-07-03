@@ -185,6 +185,8 @@ fun EventDetailSheet(
                 try { LocalDate.parse(dateStr) } catch (e: Exception) { null }
             } else if (event.repeat.contains("yearly")) {
                 event.date
+            } else if (event.id < 0) { // Virtual event fallback
+                event.date
             } else {
                 null
             }
@@ -203,7 +205,7 @@ fun EventDetailSheet(
         val time = when {
             event.isAllDay -> null
             event.startTime != null -> event.startTime.format(timeFmt) +
-                    (event.endTime?.let { ", ${it.format(timeFmt)}" } ?: "")
+                (event.endTime?.let { ", ${it.format(timeFmt)}" } ?: "")
             else -> null
         }
         if (time != null) "$date, $time" else date
@@ -222,27 +224,7 @@ fun EventDetailSheet(
                         .verticalScroll(rememberScrollState())
                 ) {
                     if (isCelebration) {
-                        CelebrationHeader(event, headerColor, locale, selectedDate)
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "$relative: ${event.title}",
-                                fontSize = 14.sp,
-                                color = headerColor,
-                                textAlign = TextAlign.Center
-                            )
-                            if (age != null && age > 0) {
-                                Text(
-                                    text = trans(R.string.birthday_age, age),
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = headerColor,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
-                            }
-                        }
+                        CelebrationHeader(event, headerColor, age)
                         ReminderPill(event, headerColor, onToggleReminder)
                         Spacer(Modifier.height(16.dp))
                     } else {
@@ -332,24 +314,23 @@ fun EventDetailSheet(
 }
 
 @Composable
-private fun CelebrationHeader(event: CalendarEvent, color: Color, locale: Locale, selectedDate: LocalDate? = null) {
+private fun CelebrationHeader(event: CalendarEvent, color: Color, age: Int?) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(color, RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
             .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 24.dp),
+            .padding(horizontal = 20.dp, vertical = 32.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            val displayDate = selectedDate ?: event.date
-            Text(
-                displayDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy EEE", locale)),
-                color = Color.White.copy(alpha = 0.9f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold
+            Icon(
+                Icons.Default.Cake, 
+                contentDescription = null, 
+                tint = Color.White, 
+                modifier = Modifier.size(64.dp)
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
             Text(
                 event.title,
                 color = Color.White,
@@ -357,8 +338,15 @@ private fun CelebrationHeader(event: CalendarEvent, color: Color, locale: Locale
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(20.dp))
-            Icon(Icons.Default.Cake, contentDescription = null, tint = Color.White, modifier = Modifier.size(56.dp))
+            if (age != null && age > 0) {
+                Text(
+                    text = trans(R.string.birthday_age, age),
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
     }
 }
@@ -453,7 +441,7 @@ private fun relativeDay(date: LocalDate, locale: Locale): String {
         1L -> rdtf.format(Direction.NEXT, AbsoluteUnit.DAY)
         -1L -> rdtf.format(Direction.LAST, AbsoluteUnit.DAY)
         else -> if (days > 0) rdtf.format(days.toDouble(), Direction.NEXT, RelativeUnit.DAYS)
-        else rdtf.format((-days).toDouble(), Direction.LAST, RelativeUnit.DAYS)
+                else rdtf.format((-days).toDouble(), Direction.LAST, RelativeUnit.DAYS)
     }
     return text.replaceFirstChar { it.titlecase(locale) }
 }

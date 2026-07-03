@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleIntent(intent)
     }
 
@@ -78,8 +79,9 @@ class MainActivity : ComponentActivity() {
             return
         }
         val eventId = intent.getIntExtra("EVENT_ID", -1)
+        val origDateStr = intent.getStringExtra("EVENT_ORIG_DATE")
         if (eventId != -1) {
-            viewModel.showEventDetails(eventId)
+            viewModel.showEventDetails(eventId, origDateStr)
         } else {
             val type = intent.getStringExtra("EVENT_TYPE")
             val title = intent.getStringExtra("EVENT_TITLE")
@@ -87,7 +89,7 @@ class MainActivity : ComponentActivity() {
             if (type != null && title != null && dateStr != null) {
                 try {
                     val date = LocalDate.parse(dateStr)
-                    viewModel.showVirtualEventDetails(type, title, date)
+                    viewModel.showVirtualEventDetails(type, title, date, origDateStr)
                 } catch (e: Exception) {
                     AppLog.e("MainActivity", "Failed to parse date from intent: $dateStr", e)
                 }

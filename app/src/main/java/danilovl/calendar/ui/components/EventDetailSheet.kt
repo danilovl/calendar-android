@@ -178,9 +178,9 @@ fun EventDetailSheet(
     val isCelebration = isBirthday || event.eventType == EventType.ANNIVERSARY.value
     val headerColor = eventAccentColor(event, settings)
 
-    val age = remember(event, selectedDate) {
+    val birthDate = remember(event) {
         if (isBirthday) {
-            val birthDate = if (event.description.contains("BIRTHDAY_ORIG_DATE:")) {
+            if (event.description.contains("BIRTHDAY_ORIG_DATE:")) {
                 val dateStr = event.description.substringAfter("BIRTHDAY_ORIG_DATE:").substringBefore("|")
                 try { LocalDate.parse(dateStr) } catch (e: Exception) { null }
             } else if (event.repeat.contains("yearly")) {
@@ -190,11 +190,14 @@ fun EventDetailSheet(
             } else {
                 null
             }
-            birthDate?.let {
-                val targetDate = selectedDate ?: event.date
-                ChronoUnit.YEARS.between(it, targetDate).toInt()
-            }
         } else null
+    }
+
+    val age = remember(birthDate, selectedDate) {
+        birthDate?.let {
+            val targetDate = selectedDate ?: event.date
+            ChronoUnit.YEARS.between(it, targetDate).toInt()
+        }
     }
 
     val timeFmt = DateTimeUtils.timeFormatter
@@ -205,7 +208,7 @@ fun EventDetailSheet(
         val time = when {
             event.isAllDay -> null
             event.startTime != null -> event.startTime.format(timeFmt) +
-                (event.endTime?.let { ", ${it.format(timeFmt)}" } ?: "")
+                    (event.endTime?.let { ", ${it.format(timeFmt)}" } ?: "")
             else -> null
         }
         if (time != null) "$date, $time" else date
@@ -224,7 +227,7 @@ fun EventDetailSheet(
                         .verticalScroll(rememberScrollState())
                 ) {
                     if (isCelebration) {
-                        CelebrationHeader(event, headerColor, age)
+                        CelebrationHeader(event, headerColor, age, birthDate)
                         ReminderPill(event, headerColor, onToggleReminder)
                         Spacer(Modifier.height(16.dp))
                     } else {
@@ -314,7 +317,7 @@ fun EventDetailSheet(
 }
 
 @Composable
-private fun CelebrationHeader(event: CalendarEvent, color: Color, age: Int?) {
+private fun CelebrationHeader(event: CalendarEvent, color: Color, age: Int?, birthDate: LocalDate?) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -325,9 +328,9 @@ private fun CelebrationHeader(event: CalendarEvent, color: Color, age: Int?) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-                Icons.Default.Cake, 
-                contentDescription = null, 
-                tint = Color.White, 
+                Icons.Default.Cake,
+                contentDescription = null,
+                tint = Color.White,
                 modifier = Modifier.size(64.dp)
             )
             Spacer(Modifier.height(16.dp))
@@ -345,6 +348,16 @@ private fun CelebrationHeader(event: CalendarEvent, color: Color, age: Int?) {
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+            if (birthDate != null) {
+                val locale = appLocale()
+                val dateText = birthDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", locale))
+                Text(
+                    text = dateText,
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
         }
@@ -441,7 +454,7 @@ private fun relativeDay(date: LocalDate, locale: Locale): String {
         1L -> rdtf.format(Direction.NEXT, AbsoluteUnit.DAY)
         -1L -> rdtf.format(Direction.LAST, AbsoluteUnit.DAY)
         else -> if (days > 0) rdtf.format(days.toDouble(), Direction.NEXT, RelativeUnit.DAYS)
-                else rdtf.format((-days).toDouble(), Direction.LAST, RelativeUnit.DAYS)
+        else rdtf.format((-days).toDouble(), Direction.LAST, RelativeUnit.DAYS)
     }
     return text.replaceFirstChar { it.titlecase(locale) }
 }

@@ -264,7 +264,13 @@ class CalendarViewModel(
     private val _showAddEvent = MutableStateFlow(false)
     val showAddEvent: StateFlow<Boolean> = _showAddEvent.asStateFlow()
 
-    fun showEventDetails(eventId: Int, origDateStr: String? = null) {
+    fun clearAllOverlays() {
+        _showAddEvent.value = false
+        _selectedEvent.value = null
+    }
+
+    fun showEventDetails(eventId: Int, origDateStr: String? = null, eventDateStr: String? = null) {
+        clearAllOverlays()
         viewModelScope.launch {
             val event = eventDao.getEventById(eventId)
             if (event != null) {
@@ -275,12 +281,16 @@ class CalendarViewModel(
                 } else event
                 
                 _selectedEvent.value = updatedEvent
-                selectDate(updatedEvent.date)
+                val dateToSelect = eventDateStr?.let {
+                    try { LocalDate.parse(it) } catch (e: Exception) { null }
+                } ?: updatedEvent.date
+                selectDate(dateToSelect)
             }
         }
     }
 
     fun showVirtualEventDetails(type: String, title: String, date: LocalDate, origDateStr: String? = null) {
+        clearAllOverlays()
         val virtualEvent = CalendarEvent(
             id = if (type == EventType.HOLIDAY.value) -1 else -2,
             title = title,

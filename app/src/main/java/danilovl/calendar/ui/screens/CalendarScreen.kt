@@ -88,6 +88,17 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     var popupDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
     var newEventTime by rememberSaveable { mutableStateOf<LocalTime?>(null) }
 
+    androidx.compose.runtime.LaunchedEffect(detailEvent) {
+        if (detailEvent != null) {
+            showSettingsScreen = false
+            showSearchScreen = false
+            showDateCalcScreen = false
+            showGoToDate = false
+            editingEvent = null
+            popupDate = null
+        }
+    }
+
     val anyOverlay = showAddEventScreen || editingEvent != null ||
         showSearchScreen || showSettingsScreen || showDateCalcScreen
     BackHandler(enabled = anyOverlay || currentViewMode != CalendarViewMode.MONTH) {

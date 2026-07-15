@@ -80,8 +80,9 @@ class MainActivity : ComponentActivity() {
         }
         val eventId = intent.getIntExtra("EVENT_ID", -1)
         val origDateStr = intent.getStringExtra("EVENT_ORIG_DATE")
+        val eventDateStr = intent.getStringExtra("EVENT_DATE")
         if (eventId != -1) {
-            viewModel.showEventDetails(eventId, origDateStr)
+            viewModel.showEventDetails(eventId, origDateStr, eventDateStr)
         } else {
             val type = intent.getStringExtra("EVENT_TYPE")
             val title = intent.getStringExtra("EVENT_TITLE")

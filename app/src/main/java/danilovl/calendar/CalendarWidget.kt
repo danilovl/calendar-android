@@ -274,6 +274,7 @@ class CalendarWidget : GlanceAppWidget() {
         val intent = android.content.Intent(context, MainActivity::class.java).apply {
             if (event.id != null) {
                 putExtra("EVENT_ID", event.id)
+                putExtra("EVENT_DATE", date.toString())
             } else {
                 putExtra("EVENT_TYPE", event.type)
                 putExtra("EVENT_TITLE", event.title)

@@ -208,7 +208,7 @@ fun EventDetailSheet(
         val time = when {
             event.isAllDay -> null
             event.startTime != null -> event.startTime.format(timeFmt) +
-                    (event.endTime?.let { ", ${it.format(timeFmt)}" } ?: "")
+                (event.endTime?.let { ", ${it.format(timeFmt)}" } ?: "")
             else -> null
         }
         if (time != null) "$date, $time" else date
@@ -328,9 +328,9 @@ private fun CelebrationHeader(event: CalendarEvent, color: Color, age: Int?, bir
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-                Icons.Default.Cake,
-                contentDescription = null,
-                tint = Color.White,
+                Icons.Default.Cake, 
+                contentDescription = null, 
+                tint = Color.White, 
                 modifier = Modifier.size(64.dp)
             )
             Spacer(Modifier.height(16.dp))
@@ -454,7 +454,7 @@ private fun relativeDay(date: LocalDate, locale: Locale): String {
         1L -> rdtf.format(Direction.NEXT, AbsoluteUnit.DAY)
         -1L -> rdtf.format(Direction.LAST, AbsoluteUnit.DAY)
         else -> if (days > 0) rdtf.format(days.toDouble(), Direction.NEXT, RelativeUnit.DAYS)
-        else rdtf.format((-days).toDouble(), Direction.LAST, RelativeUnit.DAYS)
+                else rdtf.format((-days).toDouble(), Direction.LAST, RelativeUnit.DAYS)
     }
     return text.replaceFirstChar { it.titlecase(locale) }
 }

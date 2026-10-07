@@ -77,8 +77,8 @@ import java.util.Locale
 fun EventDetailSheet(
     event: CalendarEvent,
     onDismiss: () -> Unit,
-    onEdit: (CalendarEvent, Boolean) -> Unit,
-    onDelete: (CalendarEvent, Boolean) -> Unit,
+    onEdit: (CalendarEvent) -> Unit,
+    onDelete: (CalendarEvent, Boolean, LocalDate?) -> Unit,
     onToggleReminder: () -> Unit = {},
     settings: AppSettings? = null,
     selectedDate: LocalDate? = null
@@ -154,13 +154,13 @@ fun EventDetailSheet(
                     )
                     Spacer(Modifier.height(16.dp))
                     TextButton(
-                        onClick = { onDelete(event, true); showDeleteConfirm = false },
+                        onClick = { onDelete(event, true, selectedDate); showDeleteConfirm = false },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.delete_this_occurrence), color = XiaomiBlue)
                     }
                     TextButton(
-                        onClick = { onDelete(event, false); showDeleteConfirm = false },
+                        onClick = { onDelete(event, false, null); showDeleteConfirm = false },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.delete_all_occurrences), color = XiaomiBlue)
@@ -276,26 +276,19 @@ fun EventDetailSheet(
                 }
 
                 if (event.id >= 0) {
-                    val isRecurring = event.repeat != "none"
-                    Column(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(vertical = 20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .padding(vertical = 28.dp),
+                        horizontalArrangement = Arrangement.spacedBy(36.dp, Alignment.CenterHorizontally)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(if (isRecurring) 12.dp else 36.dp, Alignment.CenterHorizontally)
-                        ) {
-                            if (isRecurring) {
-                                RoundActionButton(Icons.Default.Edit, trans(R.string.edit_this_occurrence)) { onEdit(event, true) }
-                                RoundActionButton(Icons.Default.Edit, trans(R.string.edit_all_occurrences)) { onEdit(event, false) }
-                                RoundActionButton(Icons.Default.Delete, trans(R.string.delete_this_occurrence)) { onDelete(event, true) }
-                                RoundActionButton(Icons.Default.Delete, trans(R.string.delete_all_occurrences)) { onDelete(event, false) }
+                        RoundActionButton(Icons.Default.Edit, trans(R.string.action_edit)) { onEdit(event) }
+                        RoundActionButton(Icons.Default.Delete, trans(R.string.action_delete)) {
+                            if (event.repeat != "none") {
+                                showDeleteConfirm = true
                             } else {
-                                RoundActionButton(Icons.Default.Edit, trans(R.string.action_edit)) { onEdit(event, false) }
-                                RoundActionButton(Icons.Default.Delete, trans(R.string.action_delete)) { onDelete(event, false) }
+                                onDelete(event, false, null)
                             }
                         }
                     }

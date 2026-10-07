@@ -85,7 +85,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     var showDateCalcScreen by rememberSaveable { mutableStateOf(false) }
     var showGoToDate by rememberSaveable { mutableStateOf(false) }
     var editingEvent by rememberSaveable { mutableStateOf<CalendarEvent?>(null) }
-    var isEditOnlyThisInstance by rememberSaveable { mutableStateOf(false) }
+    var editingInstanceDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
     var popupDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
     var newEventTime by rememberSaveable { mutableStateOf<LocalTime?>(null) }
 
@@ -129,16 +129,16 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
         EventDetailSheet(
             event = event,
             onDismiss = { viewModel.clearSelectedEvent() },
-            onEdit = { ev, onlyThis ->
+            onEdit = { ev ->
                 viewModel.clearSelectedEvent()
                 editingEvent = ev
-                isEditOnlyThisInstance = onlyThis
+                editingInstanceDate = selectedDate
             },
-            onDelete = { event, onlyThis ->
+            onDelete = { event, onlyThis, instanceDate ->
                 if (!onlyThis) {
                     ReminderScheduler.cancel(context, event.title, event.date)
                 }
-                viewModel.deleteEvent(event, onlyThis)
+                viewModel.deleteEvent(event, onlyThis, instanceDate)
                 viewModel.clearSelectedEvent()
             },
             onToggleReminder = {
@@ -183,11 +183,12 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
         AddEventScreen(
             selectedDate = selectedDate,
             initialEvent = currentEditingEvent,
+            instanceDate = editingInstanceDate,
             initialTime = newEventTime,
-            defaultOnlyThis = isEditOnlyThisInstance,
             onDismiss = {
                 viewModel.dismissAddEvent()
                 editingEvent = null
+                editingInstanceDate = null
                 newEventTime = null
             },
             onConfirm = { title, desc, startDate, endDate, start, end, allDay,
@@ -195,10 +196,11 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                 viewModel.addEvent(
                     title, desc, startDate, endDate, start, end, allDay,
                     repeat, rem, melody, reminderOffset, tz, type, color, location, repUntil,
-                    currentEditingEvent, onlyThis
+                    currentEditingEvent, onlyThis, editingInstanceDate
                 )
                 viewModel.dismissAddEvent()
                 editingEvent = null
+                editingInstanceDate = null
                 newEventTime = null
             }
         )

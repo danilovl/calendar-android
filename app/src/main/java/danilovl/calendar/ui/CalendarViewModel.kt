@@ -409,21 +409,22 @@ class CalendarViewModel(
         location: String = "",
         repeatUntil: LocalDate? = null,
         originalEvent: CalendarEvent? = null,
-        onlyThisInstance: Boolean = false
+        onlyThisInstance: Boolean = false,
+        instanceDate: LocalDate? = null
     ) {
         viewModelScope.launch {
             if (originalEvent != null) {
-                if (onlyThisInstance && originalEvent.repeat != "none") {
+                if (onlyThisInstance && originalEvent.repeat != "none" && instanceDate != null) {
                     val updatedExclusions = if (originalEvent.excludedDates.isEmpty()) {
-                        originalEvent.date.toString()
+                        instanceDate.toString()
                     } else {
-                        "${originalEvent.excludedDates},${originalEvent.date}"
+                        "${originalEvent.excludedDates},$instanceDate"
                     }
                     eventDao.insertEvent(originalEvent.copy(excludedDates = updatedExclusions))
                 } else {
                     eventDao.deleteEvent(originalEvent)
                 }
-                ReminderScheduler.cancel(application, originalEvent.title, originalEvent.date)
+                ReminderScheduler.cancel(application, originalEvent.title, instanceDate ?: originalEvent.date)
             }
 
             val finalDescription = if (eventType == EventType.BIRTHDAY.value && !description.contains("BIRTHDAY_ORIG_DATE:")) {
@@ -467,17 +468,19 @@ class CalendarViewModel(
         }
     }
 
-    fun deleteEvent(event: CalendarEvent, onlyThisInstance: Boolean = false) {
+    fun deleteEvent(event: CalendarEvent, onlyThisInstance: Boolean = false, instanceDate: LocalDate? = null) {
         viewModelScope.launch {
-            if (onlyThisInstance && event.repeat != "none") {
+            if (onlyThisInstance && event.repeat != "none" && instanceDate != null) {
                 val updatedExclusions = if (event.excludedDates.isEmpty()) {
-                    event.date.toString()
+                    instanceDate.toString()
                 } else {
-                    "${event.excludedDates},${event.date}"
+                    "${event.excludedDates},$instanceDate"
                 }
                 eventDao.insertEvent(event.copy(excludedDates = updatedExclusions))
+                ReminderScheduler.cancel(application, event.title, instanceDate)
             } else {
                 eventDao.deleteEvent(event)
+                ReminderScheduler.cancel(application, event.title, event.date)
             }
             updateWidget()
         }

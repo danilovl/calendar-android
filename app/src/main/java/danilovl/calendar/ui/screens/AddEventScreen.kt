@@ -84,10 +84,10 @@ import java.time.LocalTime
 fun AddEventScreen(
     selectedDate: LocalDate,
     initialEvent: CalendarEvent? = null,
+    instanceDate: LocalDate? = null,
     initialTime: LocalTime? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, String, LocalDate, LocalDate?, LocalTime?, LocalTime?, Boolean, String, Boolean, String, String, String, String, Int?, String, LocalDate?, Boolean) -> Unit,
-    defaultOnlyThis: Boolean = false
+    onConfirm: (String, String, LocalDate, LocalDate?, LocalTime?, LocalTime?, Boolean, String, Boolean, String, String, String, String, Int?, String, LocalDate?, Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val defaults = remember { SettingsRepository.getInstance(context).settings.value }
@@ -102,8 +102,8 @@ fun AddEventScreen(
     var isAllDay by remember { mutableStateOf(initialEvent?.isAllDay ?: false) }
     var startTime by remember { mutableStateOf(initialEvent?.startTime ?: initialTime ?: LocalTime.of(9, 0)) }
     var endTime by remember { mutableStateOf(initialEvent?.endTime ?: initialTime?.plusHours(1) ?: LocalTime.of(10, 0)) }
-    var startDate by remember { mutableStateOf(initialEvent?.date ?: selectedDate) }
-    var endDate by remember { mutableStateOf(initialEvent?.endDate ?: initialEvent?.date ?: selectedDate) }
+    var startDate by remember { mutableStateOf(instanceDate ?: initialEvent?.date ?: selectedDate) }
+    var endDate by remember { mutableStateOf(instanceDate ?: initialEvent?.endDate ?: initialEvent?.date ?: selectedDate) }
     var repeat by remember { mutableStateOf(initialEvent?.repeat ?: "none") }
     var repeatUntil by remember { mutableStateOf(initialEvent?.repeatUntil) }
     var hasReminder by remember {
@@ -287,8 +287,10 @@ fun AddEventScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { confirm(defaultOnlyThis) }) {
-                        Icon(Icons.Default.Check, contentDescription = trans(R.string.action_done), tint = Color.Black, modifier = Modifier.size(28.dp))
+                    if (initialEvent == null || initialEvent.repeat == "none") {
+                        IconButton(onClick = { confirm(false) }) {
+                            Icon(Icons.Default.Check, contentDescription = trans(R.string.action_done), tint = Color.Black, modifier = Modifier.size(28.dp))
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = XiaomiBg)

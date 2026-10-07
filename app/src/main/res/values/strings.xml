@@ -126,6 +126,10 @@
 
     <string name="delete_this_occurrence">Только это событие</string>
     <string name="delete_all_occurrences">Все события серии</string>
+    <string name="save_this_occurrence">Только это событие</string>
+    <string name="save_all_occurrences">Все события серии</string>
+    <string name="edit_this_occurrence">Только это событие</string>
+    <string name="edit_all_occurrences">Все события серии</string>
     <string name="delete_series_title">Удаление повторяющегося события</string>
 
     <string name="select_melody">Выберите мелодию</string>

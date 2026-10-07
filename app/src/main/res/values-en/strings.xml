@@ -126,6 +126,10 @@
 
     <string name="delete_this_occurrence">Only this occurrence</string>
     <string name="delete_all_occurrences">All occurrences</string>
+    <string name="save_this_occurrence">This occurrence only</string>
+    <string name="save_all_occurrences">All occurrences</string>
+    <string name="edit_this_occurrence">This occurrence only</string>
+    <string name="edit_all_occurrences">All occurrences</string>
     <string name="delete_series_title">Delete recurring event</string>
 
     <string name="select_melody">Select melody</string>

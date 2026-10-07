@@ -86,7 +86,8 @@ fun AddEventScreen(
     initialEvent: CalendarEvent? = null,
     initialTime: LocalTime? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, String, LocalDate, LocalDate?, LocalTime?, LocalTime?, Boolean, String, Boolean, String, String, String, String, Int?, String, LocalDate?) -> Unit
+    onConfirm: (String, String, LocalDate, LocalDate?, LocalTime?, LocalTime?, Boolean, String, Boolean, String, String, String, String, Int?, String, LocalDate?, Boolean) -> Unit,
+    defaultOnlyThis: Boolean = false
 ) {
     val context = LocalContext.current
     val defaults = remember { SettingsRepository.getInstance(context).settings.value }
@@ -233,7 +234,7 @@ fun AddEventScreen(
         )
     }
 
-    fun confirm() {
+    fun confirm(onlyThis: Boolean = false) {
         if (title.isBlank()) {
             titleError = true
             return
@@ -246,12 +247,12 @@ fun AddEventScreen(
                 if (isAllDay) null else startTime,
                 if (isAllDay) null else endTime,
                 isAllDay, repeat, hasReminder, reminderMelody, reminderOffset, timezone, EventType.EVENT.value,
-                eventColor, location, repeatUntil
+                eventColor, location, repeatUntil, onlyThis
             )
         } else {
             val rep = if (isCelebration) "yearly" else repeat
             val desc = if (eventType == EventType.ANNIVERSARY.value) "" else description
-            onConfirm(title, desc, startDate, null, null, null, true, rep, hasReminder, reminderMelody, reminderOffset, timezone, eventType, eventColor, "", repeatUntil)
+            onConfirm(title, desc, startDate, null, null, null, true, rep, hasReminder, reminderMelody, reminderOffset, timezone, eventType, eventColor, "", repeatUntil, onlyThis)
         }
     }
 
@@ -286,7 +287,7 @@ fun AddEventScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { confirm() }) {
+                    IconButton(onClick = { confirm(defaultOnlyThis) }) {
                         Icon(Icons.Default.Check, contentDescription = trans(R.string.action_done), tint = Color.Black, modifier = Modifier.size(28.dp))
                     }
                 },
@@ -578,6 +579,28 @@ fun AddEventScreen(
                             modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp),
                             colors = transparentTextFieldColors()
                         )
+                    }
+                }
+            }
+
+            if (initialEvent != null && initialEvent.repeat != "none") {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    androidx.compose.material3.Button(
+                        onClick = { confirm(onlyThis = true) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = XiaomiBlue)
+                    ) {
+                        Text(trans(R.string.save_this_occurrence), color = Color.White)
+                    }
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = { confirm(onlyThis = false) },
+                        modifier = Modifier.fillMaxWidth(),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, XiaomiBlue)
+                    ) {
+                        Text(trans(R.string.save_all_occurrences), color = XiaomiBlue)
                     }
                 }
             }

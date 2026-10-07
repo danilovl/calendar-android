@@ -85,6 +85,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     var showDateCalcScreen by rememberSaveable { mutableStateOf(false) }
     var showGoToDate by rememberSaveable { mutableStateOf(false) }
     var editingEvent by rememberSaveable { mutableStateOf<CalendarEvent?>(null) }
+    var isEditOnlyThisInstance by rememberSaveable { mutableStateOf(false) }
     var popupDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
     var newEventTime by rememberSaveable { mutableStateOf<LocalTime?>(null) }
 
@@ -128,7 +129,11 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
         EventDetailSheet(
             event = event,
             onDismiss = { viewModel.clearSelectedEvent() },
-            onEdit = { viewModel.clearSelectedEvent(); editingEvent = it },
+            onEdit = { ev, onlyThis ->
+                viewModel.clearSelectedEvent()
+                editingEvent = ev
+                isEditOnlyThisInstance = onlyThis
+            },
             onDelete = { event, onlyThis ->
                 if (!onlyThis) {
                     ReminderScheduler.cancel(context, event.title, event.date)
@@ -179,20 +184,18 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
             selectedDate = selectedDate,
             initialEvent = currentEditingEvent,
             initialTime = newEventTime,
+            defaultOnlyThis = isEditOnlyThisInstance,
             onDismiss = {
                 viewModel.dismissAddEvent()
                 editingEvent = null
                 newEventTime = null
             },
             onConfirm = { title, desc, startDate, endDate, start, end, allDay,
-                          repeat, rem, melody, reminderOffset, tz, type, color, location, repUntil ->
-                if (currentEditingEvent != null) {
-                    ReminderScheduler.cancel(context, currentEditingEvent.title, currentEditingEvent.date)
-                    viewModel.deleteEvent(currentEditingEvent)
-                }
+                          repeat, rem, melody, reminderOffset, tz, type, color, location, repUntil, onlyThis ->
                 viewModel.addEvent(
                     title, desc, startDate, endDate, start, end, allDay,
-                    repeat, rem, melody, reminderOffset, tz, type, color, location, repUntil
+                    repeat, rem, melody, reminderOffset, tz, type, color, location, repUntil,
+                    currentEditingEvent, onlyThis
                 )
                 viewModel.dismissAddEvent()
                 editingEvent = null

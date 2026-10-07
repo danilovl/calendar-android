@@ -407,12 +407,30 @@ class CalendarViewModel(
         eventType: String = "default",
         color: Int? = null,
         location: String = "",
-        repeatUntil: LocalDate? = null
+        repeatUntil: LocalDate? = null,
+        originalEvent: CalendarEvent? = null,
+        onlyThisInstance: Boolean = false
     ) {
         viewModelScope.launch {
+            if (originalEvent != null) {
+                if (onlyThisInstance && originalEvent.repeat != "none") {
+                    val updatedExclusions = if (originalEvent.excludedDates.isEmpty()) {
+                        originalEvent.date.toString()
+                    } else {
+                        "${originalEvent.excludedDates},${originalEvent.date}"
+                    }
+                    eventDao.insertEvent(originalEvent.copy(excludedDates = updatedExclusions))
+                } else {
+                    eventDao.deleteEvent(originalEvent)
+                }
+                ReminderScheduler.cancel(application, originalEvent.title, originalEvent.date)
+            }
+
             val finalDescription = if (eventType == EventType.BIRTHDAY.value && !description.contains("BIRTHDAY_ORIG_DATE:")) {
                 "BIRTHDAY_ORIG_DATE:$date|$description"
             } else description
+
+            val newRepeat = if (onlyThisInstance) "none" else repeat
 
             val id = addEventUseCase(
                 title = title,
@@ -422,7 +440,7 @@ class CalendarViewModel(
                 startTime = startTime,
                 endTime = endTime,
                 isAllDay = isAllDay,
-                repeat = repeat,
+                repeat = newRepeat,
                 reminder = reminder,
                 reminderMelody = reminderMelody,
                 reminderOffset = reminderOffset,
@@ -430,7 +448,7 @@ class CalendarViewModel(
                 eventType = eventType,
                 color = color,
                 location = location,
-                repeatUntil = repeatUntil
+                repeatUntil = if (onlyThisInstance) null else repeatUntil
             )
             if (reminder) {
                 EventUtils.scheduleReminder(

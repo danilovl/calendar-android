@@ -1,5 +1,6 @@
 package danilovl.calendar.ui.screens
 
+import danilovl.calendar.service.isEventOnDate
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
@@ -17,7 +18,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import danilovl.calendar.data.ReminderScheduler
 import danilovl.calendar.data.local.CalendarEvent
 import danilovl.calendar.data.repository.SettingsRepository
 import danilovl.calendar.ui.CalendarViewMode
@@ -49,6 +49,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     val highlightedDate by viewModel.highlightedDate.collectAsState()
     val events by viewModel.eventsForSelectedDate.collectAsState()
     val allEvents by viewModel.allEvents.collectAsState()
+    val eventsByDate by viewModel.eventsByDate.collectAsState()
     val monthViewState by viewModel.monthViewState.collectAsState()
     val yearEventDates by viewModel.yearEventDates.collectAsState()
     val yearBirthdayDays by viewModel.yearBirthdayDays.collectAsState()
@@ -135,9 +136,6 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                 editingInstanceDate = selectedDate
             },
             onDelete = { event, onlyThis, instanceDate ->
-                if (!onlyThis) {
-                    ReminderScheduler.cancel(context, event.title, event.date)
-                }
                 viewModel.deleteEvent(event, onlyThis, instanceDate)
                 viewModel.clearSelectedEvent()
             },
@@ -150,7 +148,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     }
 
     popupDate?.let { date ->
-        val dayEvents = remember(allEvents, date) { allEvents.filter { it.date == date } }
+        val dayEvents = remember(allEvents, date) { allEvents.filter { isEventOnDate(it, date) } }
         DayEventsPopup(
             date = date,
             events = dayEvents,
@@ -251,7 +249,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                         highlightedDate = highlightedDate,
                         monthState = monthViewState,
                         pagerState = pagerState,
-                        allEvents = allEvents,
+                        eventsByDate = eventsByDate,
                         birthdays = emptyList(),
                         holidays = emptyList(),
                         onDateSelect = { date, manual -> viewModel.selectDate(date, manual) },
@@ -265,8 +263,8 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                         SelectedDateDetails(
                             events = events,
                             onDeleteEvent = { event ->
-                                ReminderScheduler.cancel(context, event.title, event.date)
-                                viewModel.deleteEvent(event)
+                                // For a recurring event only the occurrence on the selected day is removed.
+                                viewModel.deleteEvent(event, onlyThisInstance = event.repeat != "none", instanceDate = selectedDate)
                             },
                             onEventClick = { viewModel.selectEvent(it) },
                             settings = appSettings

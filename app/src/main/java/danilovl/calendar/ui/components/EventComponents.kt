@@ -86,10 +86,11 @@ fun XiaomiCard(
     border: androidx.compose.foundation.BorderStroke? = null,
     content: @Composable () -> Unit
 ) {
+    val clickModifier = if (onClick != null) Modifier.clickable { onClick() } else Modifier
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
+            .then(clickModifier),
         shape = RoundedCornerShape(16.dp),
         color = XiaomiSurface,
         border = border,
@@ -137,6 +138,7 @@ fun EventItem(
     settings: AppSettings? = null
 ) {
     val color = eventAccentColor(event, settings)
+    val titleColor = if (event.eventType == EventType.HOLIDAY.value) XiaomiRed else XiaomiTextPrimary
     XiaomiCard(onClick = { onClick?.invoke(event) }) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -149,7 +151,7 @@ fun EventItem(
                     text = event.title,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (event.eventType == EventType.HOLIDAY.value) XiaomiRed else XiaomiTextPrimary
+                    color = titleColor
                 )
 
                 if (event.description.contains("BIRTHDAY_ORIG_DATE:")) {

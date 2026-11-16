@@ -100,7 +100,8 @@ fun LocationPickerScreen(
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
             zoomController.setVisibility(CustomZoomButtonsController.Visibility.ALWAYS)
-            controller.setZoom(if (markerPosition != null) 15.0 else 12.0)
+            val initialZoom = if (markerPosition != null) 15.0 else 12.0
+            controller.setZoom(initialZoom)
             
             val initialCenter = markerPosition ?: cachedLocation
             if (initialCenter != null) {

@@ -118,6 +118,7 @@ fun ChoiceDialog(
 
         LazyColumn {
             items(options) { option ->
+                val optionColor = if (option == selected) XiaomiBlue else XiaomiTextPrimary
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -128,7 +129,7 @@ fun ChoiceDialog(
                     Text(
                         text = settingLabel(option),
                         fontSize = 16.sp,
-                        color = if (option == selected) XiaomiBlue else XiaomiTextPrimary,
+                        color = optionColor,
                         modifier = Modifier.weight(1f)
                     )
                     if (option == selected) {
@@ -236,19 +237,21 @@ fun RepeatDialog(
 ) {
     var showCustom by remember { mutableStateOf(false) }
     
+    val initialCustomRepeat = if (currentRepeat.contains("_")) currentRepeat else "1_day"
     if (showCustom) {
         RepeatWheelPickerDialog(
-            initialRepeat = if (currentRepeat.contains("_")) currentRepeat else "1_day",
+            initialRepeat = initialCustomRepeat,
             onSelect = { onSelect(it); showCustom = false },
             onDismiss = { showCustom = false }
         )
     }
 
     val options = listOf("none", "daily", "weekly", "monthly", "yearly", "custom")
+    val selectedOption = if (options.contains(currentRepeat)) currentRepeat else "custom"
     ChoiceDialog(
         title = trans(R.string.detail_repeat),
         options = options,
-        selected = if (options.contains(currentRepeat)) currentRepeat else "custom",
+        selected = selectedOption,
         onSelect = {
             if (it == "custom") {
                 showCustom = true
@@ -355,9 +358,13 @@ fun ColorPickerDialog(
         mutableStateOf(Color(c)) 
     }
 
+    val dialogTitleRes = if (showCustom) R.string.color_custom else R.string.select_color
+    val noColorBackground = if (currentColor == null) XiaomiBlue.copy(alpha = 0.1f) else Color.Transparent
+    val noColorBorder = if (currentColor == null) XiaomiBlue else Color.LightGray.copy(alpha = 0.5f)
+
     ThemedDialog(onDismiss = onDismiss) {
         Text(
-            text = trans(if (showCustom) R.string.color_custom else R.string.select_color),
+            text = trans(dialogTitleRes),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                     color = XiaomiTextPrimary,
@@ -377,10 +384,10 @@ fun ColorPickerDialog(
                                     .size(40.dp)
                                     .aspectRatio(1f)
                                     .clip(CircleShape)
-                                    .background(if (currentColor == null) XiaomiBlue.copy(alpha = 0.1f) else Color.Transparent)
+                                    .background(noColorBackground)
                                     .border(
                                         width = 1.5.dp,
-                                        color = if (currentColor == null) XiaomiBlue else Color.LightGray.copy(alpha = 0.5f),
+                                        color = noColorBorder,
                                         shape = CircleShape
                                     )
                                     .clickable { onSelect(null) },

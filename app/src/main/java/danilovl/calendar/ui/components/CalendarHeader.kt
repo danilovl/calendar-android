@@ -128,11 +128,12 @@ fun CalendarHeader(
             }
         },
         actions = {
+            val todayTint = if (isTodayHighlighted) XiaomiBlue else XiaomiTextPrimary
             IconButton(onClick = onTodayClick) {
                 Icon(
                     Icons.Default.Today,
                     contentDescription = trans(R.string.action_today),
-                    tint = if (isTodayHighlighted) XiaomiBlue else XiaomiTextPrimary,
+                    tint = todayTint,
                     modifier = Modifier.size(24.dp)
                 )
             }

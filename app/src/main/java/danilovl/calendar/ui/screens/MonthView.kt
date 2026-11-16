@@ -70,7 +70,6 @@ import danilovl.calendar.data.repository.AppSettings
 import danilovl.calendar.data.repository.ContactBirthday
 import danilovl.calendar.data.repository.Holiday
 import danilovl.calendar.service.generateDaysForMonth
-import danilovl.calendar.service.isEventOnDate
 import danilovl.calendar.ui.MonthViewState
 import danilovl.calendar.ui.components.eventAccentColor
 import danilovl.calendar.ui.theme.XiaomiBlue
@@ -105,7 +104,7 @@ fun MonthView(
     highlightedDate: LocalDate,
     monthState: MonthViewState,
     pagerState: PagerState,
-    allEvents: List<CalendarEvent>,
+    eventsByDate: Map<LocalDate, List<CalendarEvent>>,
     birthdays: List<ContactBirthday>,
     holidays: List<Holiday>,
     onDateSelect: (LocalDate, Boolean) -> Unit,
@@ -248,7 +247,7 @@ fun MonthView(
 
                 MonthGrid(
                     days = daysWithSelection,
-                    allEvents = allEvents,
+                    eventsByDate = eventsByDate,
                     birthdays = birthdays,
                     holidays = holidays,
                     activeWeekIndex = activeWeekIndex,
@@ -328,7 +327,8 @@ fun WeekDaysRow(modifier: Modifier = Modifier, weekStartsSunday: Boolean = false
 
 @Composable
 private fun WeekNumberItem(date: LocalDate, weekStartsSunday: Boolean, modifier: Modifier = Modifier) {
-    val weekFields = WeekFields.of(if (weekStartsSunday) DayOfWeek.SUNDAY else DayOfWeek.MONDAY, 1)
+    val firstDayOfWeek = if (weekStartsSunday) DayOfWeek.SUNDAY else DayOfWeek.MONDAY
+    val weekFields = WeekFields.of(firstDayOfWeek, 1)
     val weekNumber = date.get(weekFields.weekOfYear())
     Box(
         modifier = modifier.width(32.dp),
@@ -346,7 +346,7 @@ private fun WeekNumberItem(date: LocalDate, weekStartsSunday: Boolean, modifier:
 @Composable
 private fun MonthGrid(
     days: List<CalendarDay>,
-    allEvents: List<CalendarEvent>,
+    eventsByDate: Map<LocalDate, List<CalendarEvent>>,
     birthdays: List<ContactBirthday>,
     holidays: List<Holiday>,
     activeWeekIndex: Int,
@@ -359,11 +359,6 @@ private fun MonthGrid(
     onEventClick: (CalendarEvent) -> Unit,
     settings: AppSettings
 ) {
-    val eventsByDate = remember(allEvents, days) {
-        days.associate { day ->
-            day.date to allEvents.filter { isEventOnDate(it, day.date) }
-        }
-    }
     val birthdaysByDate = remember(birthdays) {
         birthdays.groupBy { it.date.month to it.date.dayOfMonth }
     }
@@ -418,6 +413,14 @@ private fun MonthGrid(
                                 day.date.dayOfWeek.value >= 6 -> XiaomiWeekendBlue
                                 else -> XiaomiTextPrimary
                             }
+                            val dayShapeModifier = when {
+                                day.isSelected -> Modifier
+                                    .background(XiaomiBlue, DAY_SHAPE)
+                                    .border(1.5.dp, XiaomiBlue, DAY_SHAPE)
+
+                                day.isToday -> Modifier.border(1.5.dp, XiaomiBlue, DAY_SHAPE)
+                                else -> Modifier
+                            }
                             Column(
                                 modifier = Modifier
                                     .weight(1f)
@@ -442,21 +445,7 @@ private fun MonthGrid(
                                             layout(side, side) { placeable.place(0, 0) }
                                         }
                                         .alpha(numAlpha)
-                                        .then(
-                                            when {
-                                                day.isSelected -> Modifier
-                                                    .background(XiaomiBlue, DAY_SHAPE)
-                                                    .border(1.5.dp, XiaomiBlue, DAY_SHAPE)
-
-                                                day.isToday -> Modifier.border(
-                                                    1.5.dp,
-                                                    XiaomiBlue,
-                                                    DAY_SHAPE
-                                                )
-
-                                                else -> Modifier
-                                            }
-                                        ),
+                                        .then(dayShapeModifier),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -604,6 +593,19 @@ private fun DayItem(
         else -> XiaomiTextPrimary
     }
 
+    val dayShapeModifier = when {
+        isSelected -> Modifier
+            .background(XiaomiBlue.copy(alpha = weekFillAlpha), DAY_SHAPE)
+            .border(1.5.dp, XiaomiBlue, DAY_SHAPE)
+
+        isToday -> Modifier.border(1.5.dp, XiaomiBlue, DAY_SHAPE)
+        else -> Modifier
+    }
+    val holidayDotColor = if (isSelected) XiaomiBlue else XiaomiRed
+    val birthdayDotColor = if (isSelected) XiaomiBlue else XiaomiEventPinkText
+    val eventDotColor = if (isSelected) XiaomiBlue else Color.Gray.copy(alpha = 0.5f)
+    val moreLabelColor = if (isSelected) XiaomiBlue else XiaomiTextSecondary
+
     val numberBoxModifier = Modifier
         .layout { measurable, constraints ->
             val side =
@@ -619,16 +621,7 @@ private fun DayItem(
             layout(side, side) { placeable.place(0, 0) }
         }
         .alpha(itemAlpha)
-        .then(
-            when {
-                isSelected -> Modifier
-                    .background(XiaomiBlue.copy(alpha = weekFillAlpha), DAY_SHAPE)
-                    .border(1.5.dp, XiaomiBlue, DAY_SHAPE)
-
-                isToday -> Modifier.border(1.5.dp, XiaomiBlue, DAY_SHAPE)
-                else -> Modifier
-            }
-        )
+        .then(dayShapeModifier)
 
     Column(
         modifier = modifier
@@ -684,7 +677,7 @@ private fun DayItem(
                         modifier = Modifier
                             .size(3.dp)
                             .clip(CircleShape)
-                            .background(if (isSelected) XiaomiBlue else XiaomiRed)
+                            .background(holidayDotColor)
                     )
                 }
                 if (dayBirthdays.isNotEmpty() || birthdays.isNotEmpty()) {
@@ -693,7 +686,7 @@ private fun DayItem(
                         modifier = Modifier
                             .size(3.dp)
                             .clip(CircleShape)
-                            .background(if (isSelected) XiaomiBlue else XiaomiEventPinkText)
+                            .background(birthdayDotColor)
                     )
                 }
                 if (dayRegularEvents.isNotEmpty()) {
@@ -704,7 +697,7 @@ private fun DayItem(
                         modifier = Modifier
                             .size(3.dp)
                             .clip(CircleShape)
-                            .background(if (isSelected) XiaomiBlue else Color.Gray.copy(alpha = 0.5f))
+                            .background(eventDotColor)
                     )
                 }
             }
@@ -787,7 +780,8 @@ private fun DayItem(
                             }
                         }
 
-                        dayRegularEvents.take(if (dayBirthdays.isEmpty()) 3 else 2).forEach { event ->
+                        val regularEventsLimit = if (dayBirthdays.isEmpty()) 3 else 2
+                        dayRegularEvents.take(regularEventsLimit).forEach { event ->
                             val chipColor = eventAccentColor(event, settings)
                             val iconStr = when(event.eventType) {
                                 EventType.REMINDER.value -> "🔔"
@@ -833,7 +827,7 @@ private fun DayItem(
                             Text(
                                 text = "${trans(R.string.label_more)} ${totalItems - 3}",
                                 fontSize = 7.sp,
-                                color = if (isSelected) XiaomiBlue else XiaomiTextSecondary,
+                                color = moreLabelColor,
                                 modifier = Modifier.padding(horizontal = 2.dp),
                                 maxLines = 1
                             )

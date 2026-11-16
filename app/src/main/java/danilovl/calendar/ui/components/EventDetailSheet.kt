@@ -275,7 +275,7 @@ fun EventDetailSheet(
                     }
                 }
 
-                if (event.id >= 0) {
+                if (event.id >= 0 && event.eventType != EventType.EXTERNAL.value) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -393,26 +393,30 @@ private fun EventHeader(event: CalendarEvent, subtitle: String, color: Color) {
 @Composable
 private fun ReminderPill(event: CalendarEvent, color: Color, onClick: () -> Unit) {
     val isActive = event.reminder
+    val pillColor = if (isActive) color.copy(alpha = 0.2f) else color.copy(alpha = 0.1f)
+    val pillBorder = if (isActive) androidx.compose.foundation.BorderStroke(1.dp, color) else null
+    val pillIcon = if (isActive) Icons.Default.NotificationsActive else Icons.Default.NotificationsNone
+    val pillText = if (isActive) trans(R.string.reminder_on) else trans(R.string.action_set_reminder)
     Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
         Surface(
             shape = RoundedCornerShape(50),
-            color = if (isActive) color.copy(alpha = 0.2f) else color.copy(alpha = 0.1f),
+            color = pillColor,
             onClick = onClick,
-            border = if (isActive) androidx.compose.foundation.BorderStroke(1.dp, color) else null
+            border = pillBorder
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    if (isActive) Icons.Default.NotificationsActive else Icons.Default.NotificationsNone,
+                    pillIcon,
                     contentDescription = null,
                     tint = color,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = if (isActive) trans(R.string.reminder_on) else trans(R.string.action_set_reminder),
+                    text = pillText,
                     color = color,
                     fontWeight = FontWeight.Bold
                 )

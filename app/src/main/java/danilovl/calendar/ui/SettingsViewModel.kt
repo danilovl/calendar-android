@@ -13,6 +13,13 @@ import danilovl.calendar.data.repository.AppSettings
 import danilovl.calendar.data.repository.ContactsRepository
 import danilovl.calendar.data.repository.ExternalCalendarRepository
 import danilovl.calendar.data.repository.SettingsRepository
+import android.net.Uri
+import androidx.glance.appwidget.updateAll
+import danilovl.calendar.CalendarWidget
+import danilovl.calendar.data.ReminderScheduler
+import danilovl.calendar.util.AppLog
+import danilovl.calendar.util.EventBackupUtils
+import danilovl.calendar.util.IcsParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -52,13 +59,33 @@ class SettingsViewModel(
         }
     }
 
-    fun importEvents(events: List<CalendarEvent>) {
+    /**
+     * Reads a JSON backup or an .ics file off the main thread and stores events that are not
+     * already present (re-importing the same file does not duplicate events).
+     * [onDone] receives the number of newly added events, or null on failure.
+     */
+    fun importFile(uri: Uri, isIcs: Boolean, onDone: (Int?) -> Unit) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                events.forEach {
-                    eventDao.insertEvent(it.copy(id = 0))
+            val added = withContext(Dispatchers.IO) {
+                try {
+                    val content = application.contentResolver.openInputStream(uri)
+                        ?.bufferedReader()?.use { it.readText() }
+                        ?: return@withContext null
+                    val events = if (isIcs) IcsParser.parse(content) else EventBackupUtils.importFromJson(content)
+                    val inserted = eventDao.insertIfMissing(events)
+                    if (inserted.any { it.reminder }) {
+                        ReminderScheduler.rescheduleAll(application)
+                    }
+                    inserted.size
+                } catch (e: Exception) {
+                    AppLog.e("SettingsViewModel", "Import failed", e)
+                    null
                 }
             }
+            if (added != null && added > 0) {
+                runCatching { CalendarWidget().updateAll(application) }
+            }
+            onDone(added)
         }
     }
 

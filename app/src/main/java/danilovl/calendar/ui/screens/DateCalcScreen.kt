@@ -87,7 +87,8 @@ fun DateCalcScreen(initialDate: LocalDate, onBack: () -> Unit) {
 
     val daysBetween = ChronoUnit.DAYS.between(startDate, endDate)
     val delta = deltaText.toLongOrNull() ?: 0L
-    val resultDate = baseDate.plusDays(if (add) delta else -delta)
+    val signedDelta = if (add) delta else -delta
+    val resultDate = baseDate.plusDays(signedDelta)
 
     Scaffold(
         topBar = {
@@ -123,6 +124,11 @@ fun DateCalcScreen(initialDate: LocalDate, onBack: () -> Unit) {
                 DateRow(stringResource(R.string.datecalc_label_date), baseDate.format(fmt)) { picker = 2 }
                 HorizontalDivider(color = XiaomiBg)
 
+                val checkIcon: @Composable () -> Unit = {
+                    Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
+                }
+                val addLeadingIcon = if (add) checkIcon else null
+                val subtractLeadingIcon = if (!add) checkIcon else null
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -131,13 +137,13 @@ fun DateCalcScreen(initialDate: LocalDate, onBack: () -> Unit) {
                         selected = add,
                         onClick = { add = true },
                         label = { Text(stringResource(R.string.datecalc_add)) },
-                        leadingIcon = if (add) { { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) } } else null
+                        leadingIcon = addLeadingIcon
                     )
                     FilterChip(
                         selected = !add,
                         onClick = { add = false },
                         label = { Text(stringResource(R.string.datecalc_subtract)) },
-                        leadingIcon = if (!add) { { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) } } else null
+                        leadingIcon = subtractLeadingIcon
                     )
                 }
 

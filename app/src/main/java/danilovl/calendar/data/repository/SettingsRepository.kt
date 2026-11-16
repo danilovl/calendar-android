@@ -56,6 +56,7 @@ class SettingsRepository private constructor(context: Context) {
         )
     }
 
+    @Synchronized
     fun update(transform: (AppSettings) -> AppSettings) {
         val updated = transform(_settings.value)
         val editor = prefs.edit()
@@ -80,7 +81,8 @@ class SettingsRepository private constructor(context: Context) {
         editor.putInt(SettingsKeys.KEY_COLOR_REMINDER, updated.reminderColor)
         editor.putString(SettingsKeys.KEY_ENABLED_CALENDARS, updated.enabledCalendars.joinToString(","))
         editor.putLong(SettingsKeys.KEY_LAST_BIRTHDAYS_SYNC, updated.lastBirthdaysSync)
-        editor.commit()
+        // apply(): in-memory state updates immediately, disk write happens off the main thread.
+        editor.apply()
         _settings.value = updated
     }
 

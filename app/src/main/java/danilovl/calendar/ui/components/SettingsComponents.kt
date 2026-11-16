@@ -158,6 +158,7 @@ fun SwitchItem(title: String, checked: Boolean, enabled: Boolean = true, vertica
         verticalAlignment = Alignment.CenterVertically
     ) {
         val textColor = if (enabled) XiaomiTextPrimary else XiaomiTextSecondary
+        val switchCallback = if (enabled) onCheckedChange else null
         Text(
             text = title, 
             fontSize = 16.sp, 
@@ -167,7 +168,7 @@ fun SwitchItem(title: String, checked: Boolean, enabled: Boolean = true, vertica
         )
         Switch(
             checked = checked,
-            onCheckedChange = if (enabled) onCheckedChange else null,
+            onCheckedChange = switchCallback,
             enabled = enabled,
             colors = SwitchDefaults.colors(checkedThumbColor = XiaomiSurface, checkedTrackColor = XiaomiBlue),
             modifier = Modifier.scale(0.8f)

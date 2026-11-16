@@ -1,5 +1,6 @@
 package danilovl.calendar.ui.screens
 
+import danilovl.calendar.service.isEventOnDate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -131,32 +132,18 @@ fun WeekView(
         val weekEnd = weekStart.plusDays(6)
         val weekNumber = remember(weekStart) { weekStart.get(WeekFields.ISO.weekOfWeekBasedYear()) }
 
+        // Per-day events with recurring and multi-day events expanded.
         val weekEvents = remember(allEvents, weekStart) {
-            val filtered = mutableListOf<CalendarEvent>()
-            allEvents.forEach {
-                if (!it.date.isBefore(weekStart) && !it.date.isAfter(weekEnd)) {
-                    filtered.add(it)
-                }
+            (0..6L).associate { offset ->
+                val day = weekStart.plusDays(offset)
+                day to allEvents.filter { isEventOnDate(it, day) }
             }
-            filtered
         }
         val eventsByDate = remember(weekEvents) {
-            val grouped = mutableMapOf<LocalDate, MutableList<CalendarEvent>>()
-            weekEvents.forEach {
-                if (!it.isAllDay && it.startTime != null) {
-                    grouped.getOrPut(it.date) { mutableListOf() }.add(it)
-                }
-            }
-            grouped
+            weekEvents.mapValues { (_, events) -> events.filter { !it.isAllDay && it.startTime != null } }
         }
         val allDayByDate = remember(weekEvents) {
-            val grouped = mutableMapOf<LocalDate, MutableList<CalendarEvent>>()
-            weekEvents.forEach {
-                if (it.isAllDay || it.startTime == null) {
-                    grouped.getOrPut(it.date) { mutableListOf() }.add(it)
-                }
-            }
-            grouped
+            weekEvents.mapValues { (_, events) -> events.filter { it.isAllDay || it.startTime == null } }
         }
 
         Column(modifier = Modifier
@@ -242,25 +229,23 @@ private fun WeekDayHeader(
                 val isSelected = date == selected
                 val isToday = date == today
                 val isWeekend = date.dayOfWeek.value >= 6
+                val dayShapeModifier = when {
+                    isSelected -> Modifier.background(XiaomiBlue, RoundedCornerShape(12.dp))
+                    isToday -> Modifier.border(1.5.dp, XiaomiBlue, RoundedCornerShape(12.dp))
+                    else -> Modifier
+                }
+                val dayNumberColor = when {
+                    isSelected -> Color.White
+                    isWeekend -> XiaomiWeekendBlue
+                    else -> XiaomiTextPrimary
+                }
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     Box(
                         modifier = Modifier
                             .padding(vertical = 2.dp)
                             .width(46.dp)
                             .height(50.dp)
-                            .then(
-                                when {
-                                    isSelected -> Modifier.background(
-                                        XiaomiBlue, RoundedCornerShape(12.dp)
-                                    )
-
-                                    isToday -> Modifier.border(
-                                        1.5.dp, XiaomiBlue, RoundedCornerShape(12.dp)
-                                    )
-
-                                    else -> Modifier
-                                }
-                            )
+                            .then(dayShapeModifier)
                             .clickable { onDateSelect(date) },
                         contentAlignment = Alignment.Center
                     ) {
@@ -268,11 +253,7 @@ private fun WeekDayHeader(
                             text = date.dayOfMonth.toString(),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Normal,
-                            color = when {
-                                isSelected -> Color.White
-                                isWeekend -> XiaomiWeekendBlue
-                                else -> XiaomiTextPrimary
-                            }
+                            color = dayNumberColor
                         )
                     }
                 }

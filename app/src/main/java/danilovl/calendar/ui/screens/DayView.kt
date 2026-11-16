@@ -1,5 +1,6 @@
 package danilovl.calendar.ui.screens
 
+import danilovl.calendar.service.isEventOnDate
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -115,7 +116,7 @@ fun DayView(
         val dayEvents = remember(allEvents, date) {
             val filtered = mutableListOf<CalendarEvent>()
             allEvents.forEach {
-                if (it.date == date) filtered.add(it)
+                if (isEventOnDate(it, date)) filtered.add(it)
             }
             filtered
         }
@@ -140,6 +141,15 @@ fun DayView(
             scrollState.scrollTo(with(density) { (HOUR_HEIGHT * startHour).roundToPx() })
         }
 
+        val isHighlighted = date == highlightedDate
+        val dayBadgeModifier = if (isHighlighted) {
+            Modifier.background(XiaomiBlue, RoundedCornerShape(16.dp))
+        } else {
+            Modifier.border(1.5.dp, XiaomiBlue, RoundedCornerShape(16.dp))
+        }
+        val dayNumberColor = if (isHighlighted) Color.White else XiaomiBlue
+        val eventDotColor = if (isHighlighted) Color.White else Color.Gray.copy(alpha = 0.5f)
+
         Column(modifier = Modifier.fillMaxSize().background(XiaomiSurface)) {
             Row(
                 modifier = Modifier.fillMaxWidth().background(XiaomiSurface).padding(16.dp),
@@ -148,17 +158,14 @@ fun DayView(
                 Box(
                     modifier = Modifier
                         .size(64.dp)
-                        .then(
-                            if (date == highlightedDate) Modifier.background(XiaomiBlue, RoundedCornerShape(16.dp))
-                            else Modifier.border(1.5.dp, XiaomiBlue, RoundedCornerShape(16.dp))
-                        ),
+                        .then(dayBadgeModifier),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = date.dayOfMonth.toString(),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Normal,
-                        color = if (date == highlightedDate) Color.White else XiaomiBlue
+                        color = dayNumberColor
                     )
                     if (dayEvents.isNotEmpty() || dayHolidays.isNotEmpty()) {
                         Box(
@@ -166,7 +173,7 @@ fun DayView(
                                 .align(Alignment.BottomCenter)
                                 .padding(bottom = 8.dp)
                                 .size(4.dp)
-                                .background(if (date == highlightedDate) Color.White else Color.Gray.copy(alpha = 0.5f), CircleShape)
+                                .background(eventDotColor, CircleShape)
                         )
                     }
                 }
@@ -179,7 +186,8 @@ fun DayView(
                         color = XiaomiTextPrimary
                     )
                     if (settings.showWeekNumber) {
-                        val weekFields = WeekFields.of(if (settings.weekStart == "sunday") DayOfWeek.SUNDAY else DayOfWeek.MONDAY, 1)
+                        val firstDayOfWeek = if (settings.weekStart == "sunday") DayOfWeek.SUNDAY else DayOfWeek.MONDAY
+                        val weekFields = WeekFields.of(firstDayOfWeek, 1)
                         val weekNum = date.get(weekFields.weekOfYear())
                         Text(
                             text = "${stringResource(R.string.unit_weeks_short)} $weekNum",
@@ -196,18 +204,20 @@ fun DayView(
             }
 
             val allDayCount = dayHolidays.size + dayBirthdays.size + allDayEvents.size
+            val allDayScrollModifier = if (allDayCount > 3) {
+                Modifier
+                    .heightIn(max = 140.dp)
+                    .verticalScroll(rememberScrollState())
+            } else {
+                Modifier
+            }
             if (allDayCount > 0) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .padding(bottom = 8.dp)
-                        .then(
-                            if (allDayCount > 3) Modifier
-                                .heightIn(max = 140.dp)
-                                .verticalScroll(rememberScrollState())
-                            else Modifier
-                        ),
+                        .then(allDayScrollModifier),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     dayHolidays.forEach { h ->
@@ -358,12 +368,13 @@ fun EventCard(event: CalendarEvent, onClick: (CalendarEvent) -> Unit, settings: 
 
 @Composable
 private fun AllDayChip(title: String, label: String, color: Color, onClick: (() -> Unit)?) {
+    val clickModifier = if (onClick != null) Modifier.clickable { onClick() } else Modifier
     Surface(
         color = color.copy(alpha = 0.12f),
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+            .then(clickModifier)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),

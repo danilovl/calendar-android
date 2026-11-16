@@ -136,10 +136,11 @@ fun DayEventsPopup(
 
 @Composable
 private fun PopupRow(dotColor: Color, title: String, subtitle: String, onClick: (() -> Unit)?) {
+    val clickModifier = if (onClick != null) Modifier.clickable { onClick() } else Modifier
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
+            .then(clickModifier),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(dotColor))

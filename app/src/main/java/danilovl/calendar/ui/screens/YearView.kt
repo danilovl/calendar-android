@@ -277,8 +277,9 @@ fun YearMonthItem(
                 }
 
                 if (cell.hasEvent) {
+                    val dotColor = if (cell.isToday) Color.White else XiaomiBlue
                     drawCircle(
-                        color = if (cell.isToday) Color.White else XiaomiBlue,
+                        color = dotColor,
                         radius = dotRadius,
                         center = Offset(
                             centerX,

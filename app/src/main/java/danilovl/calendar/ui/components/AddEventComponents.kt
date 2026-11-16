@@ -35,6 +35,10 @@ import danilovl.calendar.ui.trans
 
 @Composable
 fun CategoryItem(label: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
+    val iconBackground = if (isSelected) XiaomiBlue else XiaomiBg
+    val iconTint = if (isSelected) Color.White else XiaomiTextSecondary
+    val labelColor = if (isSelected) XiaomiBlue else XiaomiTextSecondary
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.clickable(
@@ -47,19 +51,19 @@ fun CategoryItem(label: String, icon: ImageVector, isSelected: Boolean, onClick:
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(if (isSelected) XiaomiBlue else XiaomiBg),
+                .background(iconBackground),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (isSelected) Color.White else XiaomiTextSecondary
+                tint = iconTint
             )
         }
         Text(
             label,
             fontSize = 11.sp,
-            color = if (isSelected) XiaomiBlue else XiaomiTextSecondary,
+            color = labelColor,
             maxLines = 1,
             modifier = Modifier.padding(top = 4.dp)
         )

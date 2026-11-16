@@ -20,9 +20,15 @@ import danilovl.calendar.data.repository.SettingsRepository
 import danilovl.calendar.domain.AddEventUseCase
 import danilovl.calendar.domain.GetEventsUseCase
 import danilovl.calendar.domain.GetHolidaysUseCase
+import danilovl.calendar.service.groupEventsByDate
 import danilovl.calendar.service.isEventOnDate
 import danilovl.calendar.util.AppLog
-import danilovl.calendar.util.EventUtils
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -82,14 +88,13 @@ class CalendarViewModel(
 
     init {
         viewModelScope.launch {
-            combine(
-                settingsRepository.settings,
-                _currentMonth
-            ) { settings, month ->
-                settings to month
-            }.collect { (settings, month) ->
-                loadHolidays(month.year, listOf(settings.holidayCountry) + settings.additionalHolidayCountries)
-                loadExternalEvents(month.year, settings.enabledCalendars)
+            // Data covers year-1..year+1, so reload only when the year changes, not on every month swipe.
+            val yearFlow = _currentMonth.map { it.year }.distinctUntilChanged()
+            combine(settingsRepository.settings, yearFlow) { settings, year ->
+                settings to year
+            }.collectLatest { (settings, year) ->
+                loadHolidays(year, listOf(settings.holidayCountry) + settings.additionalHolidayCountries)
+                loadExternalEvents(year, settings.enabledCalendars)
             }
         }
         viewModelScope.launch {
@@ -106,8 +111,13 @@ class CalendarViewModel(
         }
     }
 
+    private var externalJob: Job? = null
+    private var holidaysJob: Job? = null
+
+    /** Cancels a previous load so that a slow, stale response cannot overwrite a newer one. */
     fun loadExternalEvents(year: Int, calendarIds: Set<Long>) {
-        viewModelScope.launch {
+        externalJob?.cancel()
+        externalJob = viewModelScope.launch {
             if (calendarIds.isEmpty()) {
                 _externalEvents.value = emptyList()
                 return@launch
@@ -116,6 +126,8 @@ class CalendarViewModel(
                 val start = LocalDate.of(year - 1, 1, 1)
                 val end = LocalDate.of(year + 1, 12, 31)
                 _externalEvents.value = externalCalendarRepository.getEvents(calendarIds, start, end)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 AppLog.e("CalendarViewModel", "Operation failed", e)
                 _externalEvents.value = emptyList()
@@ -124,7 +136,8 @@ class CalendarViewModel(
     }
 
     fun loadHolidays(year: Int, countries: List<String>) {
-        viewModelScope.launch {
+        holidaysJob?.cancel()
+        holidaysJob = viewModelScope.launch {
             if (!settingsRepository.settings.value.internationalHolidays) {
                 _holidays.value = emptyList()
                 return@launch
@@ -136,7 +149,10 @@ class CalendarViewModel(
                         getHolidaysUseCase(y, country)
                     }
                 }.distinctBy { it.date to it.name }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
+                AppLog.e("CalendarViewModel", "Failed to load holidays", e)
                 emptyList()
             }
         }
@@ -145,12 +161,15 @@ class CalendarViewModel(
     private val localEvents: StateFlow<List<CalendarEvent>> = getEventsUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private val displayedYear = _currentMonth.map { it.year }.distinctUntilChanged()
+
     val allEvents: StateFlow<List<CalendarEvent>> = combine(
         localEvents,
         externalEvents,
         holidays,
-        contactBirthdays
-    ) { local, external, hols, birthdays ->
+        contactBirthdays,
+        displayedYear
+    ) { local, external, hols, birthdays, year ->
         val virtualHols = hols.map {
             CalendarEvent(
                 id = -1,
@@ -161,14 +180,13 @@ class CalendarViewModel(
                 description = application.getString(R.string.holiday_subtitle)
             )
         }
-        val currentYear = LocalDate.now().year
-        val virtualBirthdays = listOf(currentYear - 1, currentYear, currentYear + 1).flatMap { year ->
+        val virtualBirthdays = listOf(year - 1, year, year + 1).flatMap { y ->
             birthdays.mapNotNull {
                 try {
                     CalendarEvent(
                         id = -2,
                         title = it.name,
-                        date = it.date.withYear(year),
+                        date = it.date.withYear(y),
                         eventType = EventType.BIRTHDAY.value,
                         isAllDay = true,
                         description = "BIRTHDAY_ORIG_DATE:${it.date}|" + application.getString(R.string.birthday_subtitle)
@@ -178,10 +196,37 @@ class CalendarViewModel(
                 }
             }
         }
-        (local + external + virtualHols + virtualBirthdays)
-            .distinctBy { (it.title.lowercase().trim()) to it.date }
+        // Local events are never merged with each other: two events with the same title on one day
+        // are both legitimate. Only other sources are dropped when they duplicate a local event
+        // (e.g. a birthday saved locally with a reminder, or a holiday already entered by hand).
+        fun key(e: CalendarEvent) = e.title.lowercase().trim() to e.date
+        val localKeys = HashSet<Pair<String, LocalDate>>()
+        local.forEach { localKeys.add(key(it)) }
+        // A birthday saved locally (e.g. to get a reminder) repeats yearly — hide the contact copy in every year.
+        val localYearly = HashSet<Pair<String, java.time.MonthDay>>()
+        local.filter { it.repeat == "yearly" }.forEach {
+            localYearly.add(it.title.lowercase().trim() to java.time.MonthDay.from(it.date))
+        }
+        val others = (external.distinctBy { Triple(it.id, it.date, it.startTime) } +
+            (virtualHols + virtualBirthdays).distinctBy { key(it) })
+            .filter { key(it) !in localKeys }
+            .filter { it.id >= 0 || (it.title.lowercase().trim() to java.time.MonthDay.from(it.date)) !in localYearly }
+        (local + others)
             .sortedWith(compareBy({ !it.isAllDay }, { it.startTime }))
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }
+        .flowOn(Dispatchers.Default) // merge/sort must not compete with animation frames on the main thread
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * Events per day for the displayed year +-1 (recurring and multi-day events expanded).
+     * Computed once per data change on a background thread, so calendar pages only do map lookups
+     * while composing — no per-day filtering of all events during swipes and expand/collapse animations.
+     */
+    val eventsByDate: StateFlow<Map<LocalDate, List<CalendarEvent>>> = combine(allEvents, displayedYear) { events, year ->
+        groupEventsByDate(events, LocalDate.of(year - 1, 1, 1), LocalDate.of(year + 1, 12, 31))
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     val eventsForSelectedDate: StateFlow<List<CalendarEvent>> = combine(
         _selectedDate,
@@ -193,9 +238,11 @@ class CalendarViewModel(
     val datesWithEvents: StateFlow<List<LocalDate>> = eventDao.getDatesWithEvents()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val yearEventDates: StateFlow<Set<LocalDate>> = combine(allEvents, externalEvents, holidays) { events, extEvents, hols ->
-        (events.map { it.date } + extEvents.map { it.date } + hols.map { it.date }).toSet()
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+    /** Dates (displayed year +-1) that have at least one event. */
+    val yearEventDates: StateFlow<Set<LocalDate>> = eventsByDate
+        .map { it.keys.toSet() }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     val yearBirthdayDays: StateFlow<Set<Pair<Int, Int>>> = _contactBirthdays.map { birthdays ->
         birthdays.map { it.date.monthValue to it.date.dayOfMonth }.toSet()
@@ -231,18 +278,11 @@ class CalendarViewModel(
     }
 
     fun selectDate(date: LocalDate, updateHighlighted: Boolean = true) {
-        val oldYear = _selectedDate.value.year
         _selectedDate.value = date
         if (updateHighlighted) {
             _highlightedDate.value = date
         }
-        if (date.year != oldYear) {
-            viewModelScope.launch {
-                val settings = settingsRepository.settings.value
-                loadHolidays(date.year, listOf(settings.holidayCountry) + settings.additionalHolidayCountries)
-                loadContactBirthdays()
-            }
-        }
+        // Holidays and external events reload through the _currentMonth collector in init.
         if (YearMonth.from(date) != _currentMonth.value) {
             _currentMonth.value = YearMonth.from(date)
         }
@@ -291,13 +331,20 @@ class CalendarViewModel(
 
     fun showVirtualEventDetails(type: String, title: String, date: LocalDate, origDateStr: String? = null) {
         clearAllOverlays()
+        val isHoliday = type == EventType.HOLIDAY.value
+        val virtualId = if (isHoliday) -1 else -2
+        val virtualDescription = if (isHoliday) {
+            application.getString(R.string.holiday_subtitle)
+        } else {
+            "BIRTHDAY_ORIG_DATE:${origDateStr ?: date}|" + application.getString(R.string.birthday_subtitle)
+        }
         val virtualEvent = CalendarEvent(
-            id = if (type == EventType.HOLIDAY.value) -1 else -2,
+            id = virtualId,
             title = title,
             date = date,
             eventType = type,
             isAllDay = true,
-            description = if (type == EventType.HOLIDAY.value) application.getString(R.string.holiday_subtitle) else "BIRTHDAY_ORIG_DATE:${origDateStr ?: date}|" + application.getString(R.string.birthday_subtitle)
+            description = virtualDescription
         )
         _selectedEvent.value = virtualEvent
         selectDate(date)
@@ -346,33 +393,27 @@ class CalendarViewModel(
     }
 
     fun toggleReminder(event: CalendarEvent) {
+        if (event.eventType == EventType.EXTERNAL.value) return
         viewModelScope.launch {
             val newReminder = !event.reminder
             var updatedEvent = event.copy(reminder = newReminder)
-            
+
             if (newReminder) {
-                val toSave = if (updatedEvent.id <= 0) updatedEvent.copy(id = 0) else updatedEvent
-                val newId = eventDao.insertEvent(toSave)
-                updatedEvent = toSave.copy(id = newId.toInt())
-                
-                val settings = settingsRepository.settings.value
-                val offset = updatedEvent.reminderOffset.ifBlank { settings.defaultReminder }
-                EventUtils.scheduleReminder(
-                    application, 
-                    updatedEvent.title, 
-                    updatedEvent.date, 
-                    updatedEvent.startTime, 
-                    updatedEvent.isAllDay, 
-                    offset, 
-                    settings, 
-                    updatedEvent.id, 
-                    updatedEvent.eventType
-                )
+                if (updatedEvent.id <= 0) {
+                    // A virtual birthday/holiday becomes a stored event; birthdays repeat yearly.
+                    val repeat = if (event.eventType == EventType.BIRTHDAY.value) "yearly" else event.repeat
+                    val toSave = updatedEvent.copy(id = 0, repeat = repeat)
+                    val newId = eventDao.insertEvent(toSave)
+                    updatedEvent = toSave.copy(id = newId.toInt())
+                } else {
+                    eventDao.updateEvent(updatedEvent)
+                }
+                ReminderScheduler.schedule(application, updatedEvent, settingsRepository.settings.value)
             } else {
                 if (event.id > 0) {
-                    eventDao.insertEvent(updatedEvent)
+                    eventDao.updateEvent(updatedEvent)
                 }
-                ReminderScheduler.cancel(application, event.title, event.date)
+                ReminderScheduler.cancel(application, event.id)
             }
             _selectedEvent.value = updatedEvent
             updateWidget()
@@ -413,27 +454,14 @@ class CalendarViewModel(
         instanceDate: LocalDate? = null
     ) {
         viewModelScope.launch {
-            if (originalEvent != null) {
-                if (onlyThisInstance && originalEvent.repeat != "none" && instanceDate != null) {
-                    val updatedExclusions = if (originalEvent.excludedDates.isEmpty()) {
-                        instanceDate.toString()
-                    } else {
-                        "${originalEvent.excludedDates},$instanceDate"
-                    }
-                    eventDao.insertEvent(originalEvent.copy(excludedDates = updatedExclusions))
-                } else {
-                    eventDao.deleteEvent(originalEvent)
-                }
-                ReminderScheduler.cancel(application, originalEvent.title, instanceDate ?: originalEvent.date)
-            }
-
+            val settings = settingsRepository.settings.value
             val finalDescription = if (eventType == EventType.BIRTHDAY.value && !description.contains("BIRTHDAY_ORIG_DATE:")) {
                 "BIRTHDAY_ORIG_DATE:$date|$description"
             } else description
+            val finalRepeat = if (onlyThisInstance) "none" else repeat
+            val finalRepeatUntil = if (onlyThisInstance) null else repeatUntil
 
-            val newRepeat = if (onlyThisInstance) "none" else repeat
-
-            val id = addEventUseCase(
+            val template = CalendarEvent(
                 title = title,
                 description = finalDescription,
                 date = date,
@@ -441,7 +469,7 @@ class CalendarViewModel(
                 startTime = startTime,
                 endTime = endTime,
                 isAllDay = isAllDay,
-                repeat = newRepeat,
+                repeat = finalRepeat,
                 reminder = reminder,
                 reminderMelody = reminderMelody,
                 reminderOffset = reminderOffset,
@@ -449,41 +477,57 @@ class CalendarViewModel(
                 eventType = eventType,
                 color = color,
                 location = location,
-                repeatUntil = if (onlyThisInstance) null else repeatUntil
+                repeatUntil = finalRepeatUntil
             )
-            if (reminder) {
-                EventUtils.scheduleReminder(
-                    context = application,
-                    title = title,
-                    date = date,
-                    startTime = startTime,
-                    isAllDay = isAllDay,
-                    offsetLabel = reminderOffset,
-                    settings = settingsRepository.settings.value,
-                    eventId = id.toInt(),
-                    eventType = eventType
-                )
+
+            val stored = originalEvent?.takeIf { it.id > 0 && it.eventType != EventType.EXTERNAL.value }
+
+            try {
+                when {
+                    stored != null && onlyThisInstance && stored.repeat != "none" && instanceDate != null -> {
+                        // Detach one occurrence: exclude it from the series and store it separately.
+                        val series = stored.withExcluded(instanceDate)
+                        val newId = eventDao.updateAndInsert(series, template)
+                        ReminderScheduler.schedule(application, series, settings)
+                        ReminderScheduler.schedule(application, template.copy(id = newId.toInt()), settings)
+                    }
+                    stored != null -> {
+                        // Edit in place: keeps the id (widget/notification links) and excluded dates.
+                        val updated = template.copy(id = stored.id, excludedDates = stored.excludedDates)
+                        eventDao.updateEvent(updated)
+                        ReminderScheduler.schedule(application, updated, settings)
+                    }
+                    else -> {
+                        val id = addEventUseCase(template)
+                        ReminderScheduler.schedule(application, template.copy(id = id.toInt()), settings)
+                    }
+                }
+            } catch (e: Exception) {
+                AppLog.e("CalendarViewModel", "Failed to save event", e)
             }
             updateWidget()
         }
     }
 
     fun deleteEvent(event: CalendarEvent, onlyThisInstance: Boolean = false, instanceDate: LocalDate? = null) {
+        if (event.id <= 0 || event.eventType == EventType.EXTERNAL.value) return
         viewModelScope.launch {
             if (onlyThisInstance && event.repeat != "none" && instanceDate != null) {
-                val updatedExclusions = if (event.excludedDates.isEmpty()) {
-                    instanceDate.toString()
-                } else {
-                    "${event.excludedDates},$instanceDate"
-                }
-                eventDao.insertEvent(event.copy(excludedDates = updatedExclusions))
-                ReminderScheduler.cancel(application, event.title, instanceDate)
+                val series = event.withExcluded(instanceDate)
+                eventDao.updateEvent(series)
+                ReminderScheduler.schedule(application, series, settingsRepository.settings.value)
             } else {
                 eventDao.deleteEvent(event)
-                ReminderScheduler.cancel(application, event.title, event.date)
+                ReminderScheduler.cancel(application, event.id)
             }
             updateWidget()
         }
+    }
+
+    private fun CalendarEvent.withExcluded(day: LocalDate): CalendarEvent {
+        val dates = excludedDates.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toMutableSet()
+        dates.add(day.toString())
+        return copy(excludedDates = dates.joinToString(","))
     }
 
     private fun updateWidget() {

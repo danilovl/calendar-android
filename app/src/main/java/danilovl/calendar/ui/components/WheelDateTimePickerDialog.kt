@@ -220,15 +220,18 @@ fun <T> WheelPicker(
                 val isSelected by remember {
                     derivedStateOf { listState.firstVisibleItemIndex == index }
                 }
+                val itemFontSize = if (isSelected) 18.sp else 16.sp
+                val itemWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                val itemColor = if (isSelected) XiaomiBlue else XiaomiTextSecondary
                 Box(
                     modifier = Modifier.height(40.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = format(item),
-                        fontSize = if (isSelected) 18.sp else 16.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) XiaomiBlue else XiaomiTextSecondary,
+                        fontSize = itemFontSize,
+                        fontWeight = itemWeight,
+                        color = itemColor,
                         maxLines = 1
                     )
                 }

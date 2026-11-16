@@ -101,7 +101,11 @@ class CalendarWidget : GlanceAppWidget() {
         val holidaysDeferred = async {
             if (settings.internationalHolidays) {
                 try {
-                    withTimeoutOrNull(3000) { holidayRepository.getHolidays(today.year, settings.holidayCountry) } ?: emptyList()
+                    withTimeoutOrNull(3000) {
+                        (listOf(settings.holidayCountry) + settings.additionalHolidayCountries).distinct()
+                            .flatMap { holidayRepository.getHolidays(today.year, it) }
+                            .distinctBy { it.date to it.name }
+                    } ?: emptyList()
                 } catch (e: Exception) {
                     AppLog.e("CalendarWidget", "Error fetching holidays", e)
                     emptyList()
@@ -286,10 +290,15 @@ class CalendarWidget : GlanceAppWidget() {
             flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
         }
 
+        val rowBackground = if (isBirthday) BirthdayBg else Color.Transparent
+        val titleDayColor = if (isBirthday) BirthdayText else Color.Black
+        val titleNightColor = if (isBirthday) BirthdayText else Color.White
+        val titleWeight = if (isBirthday || isHoliday) FontWeight.Medium else FontWeight.Normal
+
         Row(
             modifier = GlanceModifier
                 .fillMaxWidth()
-                .background(if (isBirthday) BirthdayBg else Color.Transparent)
+                .background(rowBackground)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .clickable(actionStartActivity(intent)),
             verticalAlignment = Alignment.CenterVertically
@@ -298,9 +307,9 @@ class CalendarWidget : GlanceAppWidget() {
                 Text(
                     text = event.title,
                     style = TextStyle(
-                        color = ColorProvider(day = if (isBirthday) BirthdayText else Color.Black, night = if (isBirthday) BirthdayText else Color.White),
+                        color = ColorProvider(day = titleDayColor, night = titleNightColor),
                         fontSize = 14.sp,
-                        fontWeight = if (isBirthday || isHoliday) FontWeight.Medium else FontWeight.Normal
+                        fontWeight = titleWeight
                     ),
                     maxLines = 2
                 )

@@ -205,22 +205,9 @@ fun SettingsScreen(onBack: () -> Unit) {
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
-            scope.launch(Dispatchers.IO) {
-                try {
-                    val json = context.contentResolver.openInputStream(it)?.bufferedReader()?.use { it.readText() }
-                    if (json != null) {
-                        val events = danilovl.calendar.util.EventBackupUtils.importFromJson(json)
-                        viewModel.importEvents(events)
-                        withContext(Dispatchers.Main) {
-                            android.widget.Toast.makeText(context, importSuccess, android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                } catch (e: Exception) {
-                    AppLog.e("SettingsScreen", "Operation failed", e)
-                    withContext(Dispatchers.Main) {
-                        android.widget.Toast.makeText(context, importError, android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                }
+            viewModel.importFile(it, isIcs = false) { added ->
+                val msg = if (added != null) importSuccess else importError
+                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -229,22 +216,9 @@ fun SettingsScreen(onBack: () -> Unit) {
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
-            scope.launch(Dispatchers.IO) {
-                try {
-                    val content = context.contentResolver.openInputStream(it)?.bufferedReader()?.use { it.readText() }
-                    if (content != null) {
-                        val events = danilovl.calendar.util.IcsParser.parse(content)
-                        viewModel.importEvents(events)
-                        withContext(Dispatchers.Main) {
-                            android.widget.Toast.makeText(context, importSuccess, android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                } catch (e: Exception) {
-                    AppLog.e("SettingsScreen", "Operation failed", e)
-                    withContext(Dispatchers.Main) {
-                        android.widget.Toast.makeText(context, importError, android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                }
+            viewModel.importFile(it, isIcs = true) { added ->
+                val msg = if (added != null) importSuccess else importError
+                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -788,15 +762,8 @@ fun ExternalCalendarsScreen(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            try {
-                val content = context.contentResolver.openInputStream(it)?.bufferedReader()?.use { r -> r.readText() }
-                if (content != null) {
-                    val events = danilovl.calendar.util.IcsParser.parse(content)
-                    viewModel.importEvents(events)
-                    onBack()
-                }
-            } catch (e: Exception) {
-                AppLog.e("SettingsScreen", "Operation failed", e)
+            viewModel.importFile(it, isIcs = true) { added ->
+                if (added != null) onBack()
             }
         }
     }

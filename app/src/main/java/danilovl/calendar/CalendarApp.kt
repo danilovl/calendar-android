@@ -2,6 +2,7 @@ package danilovl.calendar
 
 import android.app.Application
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import danilovl.calendar.data.ReminderScheduler
 import danilovl.calendar.data.repository.SettingsRepository
 import danilovl.calendar.util.AppLog
 import danilovl.calendar.util.IconAlarmScheduler
@@ -22,14 +23,25 @@ class CalendarApp : Application() {
         IconUtils.applyIconForToday(this)
         IconAlarmScheduler.scheduleNextMidnight(this)
         observeSettingsForWidget()
+        appScope.launch(Dispatchers.IO) {
+            // Covers cases where a system broadcast was missed (e.g. force-stop, first launch after update).
+            ReminderScheduler.rescheduleAll(this@CalendarApp)
+        }
     }
 
     private fun observeSettingsForWidget() {
         val repository = SettingsRepository.getInstance(this)
+        var lastAllDayTime = repository.settings.value.allDayReminderTime
+        var lastDefaultReminder = repository.settings.value.defaultReminder
         appScope.launch {
             repository.settings
                 .drop(1)
-                .collect {
+                .collect { settings ->
+                    if (settings.allDayReminderTime != lastAllDayTime || settings.defaultReminder != lastDefaultReminder) {
+                        lastAllDayTime = settings.allDayReminderTime
+                        lastDefaultReminder = settings.defaultReminder
+                        launch(Dispatchers.IO) { ReminderScheduler.rescheduleAll(this@CalendarApp) }
+                    }
                     try {
                         val widget = CalendarWidget()
                         val manager = GlanceAppWidgetManager(this@CalendarApp)

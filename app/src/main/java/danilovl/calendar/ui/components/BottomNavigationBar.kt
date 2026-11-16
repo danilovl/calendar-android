@@ -46,16 +46,18 @@ fun BottomNavigationBar(currentMode: CalendarViewMode, onModeSelect: (CalendarVi
                     Triple(CalendarViewMode.DAY, stringResource(R.string.view_day), Icons.Outlined.CalendarToday)
                 ).forEach { (mode, label, icon) ->
                     val isSelected = currentMode == mode
+                    val itemColor = if (isSelected) Color.Black else Color.Gray
+                    val labelWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f).clickable { onModeSelect(mode) }
                     ) {
-                        Icon(icon, label, tint = if (isSelected) Color.Black else Color.Gray, modifier = Modifier.size(24.dp))
+                        Icon(icon, label, tint = itemColor, modifier = Modifier.size(24.dp))
                         Text(
                             label,
                             fontSize = 10.sp,
-                            color = if (isSelected) Color.Black else Color.Gray,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            color = itemColor,
+                            fontWeight = labelWeight
                         )
                     }
                 }

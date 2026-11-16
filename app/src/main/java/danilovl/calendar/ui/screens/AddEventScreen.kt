@@ -336,8 +336,24 @@ fun AddEventScreen(
                 }
             }
 
+            val titlePlaceholder = when {
+                eventType == EventType.BIRTHDAY.value -> trans(R.string.enter_name)
+                isFullEvent -> trans(R.string.enter_title)
+                else -> trans(R.string.type_reminder)
+            }
+            val titleErrorText = if (eventType == EventType.BIRTHDAY.value) {
+                trans(R.string.enter_name)
+            } else {
+                trans(R.string.enter_title)
+            }
+            val titleBorder = if (titleError) {
+                androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.error)
+            } else {
+                null
+            }
+
             XiaomiCard(
-                border = if (titleError) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.error) else null
+                border = titleBorder
             ) {
                 Column {
                     TextField(
@@ -346,14 +362,14 @@ fun AddEventScreen(
                             title = it
                             if (titleError && it.isNotBlank()) titleError = false
                         },
-                        placeholder = { Text(if (eventType == EventType.BIRTHDAY.value) trans(R.string.enter_name) else if (isFullEvent) trans(R.string.enter_title) else trans(R.string.type_reminder)) },
+                        placeholder = { Text(titlePlaceholder) },
                         modifier = Modifier.fillMaxWidth(),
                         colors = transparentTextFieldColors(),
                         isError = titleError
                     )
                     if (titleError) {
                         Text(
-                            text = if (eventType == EventType.BIRTHDAY.value) trans(R.string.enter_name) else trans(R.string.enter_title),
+                            text = titleErrorText,
                             color = MaterialTheme.colorScheme.error,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
@@ -429,6 +445,7 @@ fun AddEventScreen(
                     }
                 }
 
+                val selectedColorSwatch = eventColor?.let { Color(it) } ?: Color.Transparent
                 XiaomiCard {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -439,19 +456,20 @@ fun AddEventScreen(
                             modifier = Modifier
                                 .size(24.dp)
                                 .clip(CircleShape)
-                                .background(if (eventColor != null) Color(eventColor!!) else Color.Transparent)
+                                .background(selectedColorSwatch)
                                 .border(1.dp, Color.LightGray, CircleShape)
                         )
                     }
                 }
 
+                val locationText = if (location.startsWith("geo:")) location.substringAfter("|") else location
                 XiaomiCard {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         TextField(
-                            value = if (location.startsWith("geo:")) location.substringAfter("|") else location,
+                            value = locationText,
                             onValueChange = { location = it },
                             placeholder = { Text(trans(R.string.label_location)) },
                             modifier = Modifier.weight(1f),
